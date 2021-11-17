@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="viewport" content="width=375,initial-scale=1,user-scalable=yes">
+<title>TcpShark</title>
+<link rel="stylesheet" href="../apps.css">
+</head>
+<body>
+<div class="outer">
+    <img src="img/TcpShark_splash.png" width=130 height=130 alt="AppIcon" /><br>
+    <div class="title">TcpShark</div>
+    
+    <p>
+    
+    Packet analyzer specializing in TCP analysis.
+    <div class="inner">
+        <img src="img/ScreenShot1.png" alt="image1" width=100% />
+    </div>
+    <div id="p1">
+        <a onclick="showDescription();">Learn more</a>
+    </div>
+    <div id="p2">
+        <a onclick="hideDescription();">Hide text</a><br>
+        <div class="inner">
+            TcpShark is CLI utility which uses Wireshark as an analysis engine.<br>
+            <p>
+            We cannot investigate a network trouble packets without analyzing packets.
+            However, even with Wireshark, it requires craftsmanship and experience to analyze large amount and more comprex TCP streams.<br>
+            This utility graphically displays the packet flow on a TCP stream. Thereby, it easy for anyone to understand the end-to-end data flow.<br>
+            I'm sure that TcpShark help your troubleshooting as a complementary utility to Wireshark.
+            
+            <p>
+            <br>
+            <span class="functions">Features</span>
+            <ul>
+                <li><b>Unique format</b></li>
+                Data size, window size, and SEQ/ACK number are displayed in an well-ordered column. So, you become easier to read the tendency / change in each field of TCP header.<p>
+                <li><b>Intuitive design</b></li>
+                Packet direction, TCP flags (e.g. SYN, RST) and analysis information (e.g. packet loss, retransmission) are displayed with coloured lettering. So, you become easier to notice abnormalities even in a large amount of captured data.<p>
+                <li><b>Customizable</b></li>
+                Various protocol fields supported by Wireshark (e.g. HTTP request URI, HTTP status code) can be display optionally. So, you can analyze in association with protocol information other than TCP.
+            </ul>
+            
+            <p>
+            <br>
+            <span class="functions">System Requirements</span>
+            <p>
+            TcpShark is a shell script, runs on Linux, Solaris, and macOS. <br>
+            Operation has been confirmed on the following platforms:
+            <ul>
+                <li>Cent OS 7.1, 8.4</li>
+                <li>Red Hat Enterprise Linux 7.7, 8.2</li>
+                <li>Ubuntu X.x</li>
+                <li>Oracle Solaris 11.4 (SPARC, Intel)</li>
+                <li>macOS 12.0.1 (Arm)</li>
+            </ul>
+            
+            <p>
+            <br>
+            <span class="functions">Installation</span>
+            <ol>
+                <li>Installs the prerequisite software 'Wireshark'.</li>
+                <li>Downloads TcpShark from the link below, and places it in /usr/local/bin directory.</li>
+                <li>Gives you permission to execute TcpShark with chmod.</li>
+            </ol>
+            
+            <p>
+            <br>
+            <span class="functions">Change log</span><br>
+            <table border=0 cellspacing=0>
+                <tr>
+                    <th class="changelog">Date</th>
+                    <th class="changelog">Version</th>
+                    <th class="changelog">Update</th>
+                    <th class="changelog">MD5</th>
+                </tr><tr>
+                    <td class="changelog0">2021.12.xx</td>
+                    <td class="changelog0">1.0.0</td>
+                    <td class="changelog0">First edition</td>
+                    <td class="changelog0">202b514636688330cfb8a57b99fa5386</td>
+                </tr>
+            </table><br>
+        </div>
+        <a onclick="hideDescription();">Hide text</a>
+    </div>
+    
+    <p>
+    <center>
+    </center>
+
+    <p>
+    <!-- refer: https://primer.style/octicons/ -->
+    <a href="../index.html"><img src="../img/home.svg" height=24 alt="HomePage" title="Go back to Home page" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <img src="../img/download.svg" height=24 alt="Dwonload" title="Download latest version" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="../index.html"><img src="../img/github.svg" height=24 alt="GitHub" title="Go to GitHub site" /></a>
+    <br>
+    <!-- refer: https://qiita.com/macoril/items/48125b2a0a48339b3693 -->
+    <!-- refer: https://developer.apple.com/jp/app-store/marketing/guidelines/ -->
+    <span class="trademarks">TcpShark runs on terminal of Linux/Solaris/macOS.</span>
+
+    <p>
+    
+    <div class="copyright">© 2021 manabapp.<br>
+        <b>English</b> | <a class="footer" href="index_ja.html">Japanese</a>
+    </div>
+    
+    <p>
+
+</div>
+<script>
+    document.getElementById("p1").style.display = "block";
+    document.getElementById("p2").style.display = "none";
+    function showDescription(){
+        document.getElementById("p1").style.display = "none";
+        document.getElementById("p2").style.display = "block";
+    }
+    function hideDescription(){
+        document.getElementById("p1").style.display = "block";
+        document.getElementById("p2").style.display = "none";
+    }
+</script>
+</body>
+</html>
+
