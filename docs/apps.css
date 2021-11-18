@@ -1,0 +1,24 @@
+.outer{text-align:center;}
+.inner{text-align: left; width:80%; margin:0 auto; max-width:890px;}
+body{font-size:16px; background-color:#f5f5f7; font-family:'Lucida Grande','Hiragino Kaku Gothic ProN','Meiryo','sans-serif','メイリオ','ヒラギノ角ゴ ProN W3';}
+a{color:#007aff; cursor:pointer; text-decoration:none;}
+tr{vertical-align:middle;}
+td{text-align:center; font-size:14px;}
+th{text-align:center; font-size:14px;}
+.title{color:#343437; font-size:32px; font-weight:bold;}
+.version{font-size:14px; color:#696969;}
+.footer{font-size:12px; color:#8e8e93; text-decoration:underline;}
+.copyright{font-size:12px; color:#8e8e93; text-decoration:none;}
+.trademarks{font-size:10px; color:#8e8e93; text-decoration:none;}
+.iconimg{border-radius:20%; box-shadow:0px 0px 3px; width:64px; height:64px;}
+.iconLimg{border-radius:20%; box-shadow:0px 0px 0px; padding:10px;}
+.icona{color:#343437; font-weight:bold;}
+.functions{font-size:20px; font-weight:bold;}
+.horizontal-list{overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch;}
+.item{display:inline-block; width:90%; height:200px; margin:16px; font-size:48px;}
+.yoko{display:flex; overflow-x:scroll; text-align:center;}
+.screenshotimg{border-radius:30px; box-shadow:0px 0px 3px; width:276px; height:597px; margin:10px;}
+.changelog{background-color: #8e8e93; color: white; padding: 5px 10px;}
+.changelog0{background-color: #ceced3; color: black; padding: 5px 10px;}
+.changelog1{background-color: #bebec3; color: black; padding: 5px 10px;}
+
