@@ -93,7 +93,8 @@
     <p>
     <!-- refer: https://primer.style/octicons/ -->
     <a href="../Apps/index.html"><img src="img/home.svg" height=24 alt="HomePage" title="Go back to Home page" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark" download><img src="img/download.svg" height=24 alt="Dwonload" title="Download latest version" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <!-- <a href="https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark" download><img src="img/download.svg" height=24 alt="Dwonload" title="Download latest version" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -->
+    <a href="javascript:void(0)" download="tcpshark" onclick="javascript:download(); return false"><img src="img/download.svg" height=24 alt="Dwonload" title="Download latest version" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <a href="https://github.com/manabapp/TcpShark"><img src="img/mark-github.svg" height=24 alt="GitHub" title="Go to GitHub site" /></a>
     <br>
     <!-- refer: https://qiita.com/macoril/items/48125b2a0a48339b3693 -->
@@ -119,6 +120,29 @@
     function hideDescription(){
         document.getElementById("p1").style.display = "block";
         document.getElementById("p2").style.display = "none";
+    }
+    
+    function download() {
+        "use strict";
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark", true);
+        xhr.responseType = "blob";
+        xhr.onload = function (oEvent) {
+            var blob = xhr.response;
+            if (window.navigator.msSaveBlob) { // IE or Edge
+                window.navigator.msSaveBlob(blob, filename);
+            }
+            else { // Other blowser
+                var objectURL = window.URL.createObjectURL(blob);
+                var link = document.createElement("a");
+                document.body.appendChild(link);
+                link.href = objectURL;
+                link.download = "tcpshark";
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
+        xhr.send();
     }
 </script>
 </body>
