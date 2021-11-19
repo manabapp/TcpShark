@@ -61,8 +61,10 @@
             <span class="functions">導入方法</span>
             <ol>
                 <li>前提ソフトウェアである Wireshark をインストール</li>
-                <li>後述のリンクから TcpShark をダウンロードし、/usr/local/bin ディレクトリ等に配置</li>
-                <li>TcpShark に実行権を付与</li>
+                <li>後述のリンクからファイル 'tcpshark.txt' をダウンロード</li>
+                <li>ファイル名から拡張子 '.txt' を削除</li>
+                <li>/usr/local/bin ディレクトリにファイルを配置</li>
+                <li>ファイルに実行権を付与</li>
             </ol>
             
             <p>
@@ -92,7 +94,8 @@
     <p>
     <!-- refer: https://primer.style/octicons/ -->
     <a href="../Apps/index_ja.html"><img src="img/home.svg" height=24 alt="HomePage" title="ホームページに戻る" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <a href="https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark" download><img src="img/download.svg" height=24 alt="Dwonload" title="最新バージョンをダウンロード" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="javascript:void(0)" download="tcpshark" onclick="downloadFile(); return false"><img src="img/download.svg" height=24 alt="Dwonload" title="最新バージョンをダウンロード" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <!-- <a href="javascript:void(0)" download="tcpshark" onclick="downloadFile(); return false"><img src="img/download.svg" height=24 alt="Dwonload" title="Download latest version" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -->
     <a href="https://github.com/manabapp/TcpShark"><img src="img/mark-github.svg" height=24 alt="GitHub" title="GitHub サイトに移動" /></a>
     <br>
     <!-- refer: https://qiita.com/macoril/items/48125b2a0a48339b3693 -->
@@ -119,7 +122,21 @@
         document.getElementById("p1").style.display = "block";
         document.getElementById("p2").style.display = "none";
     }
+    
+    function downloadFile() {
+        var xhr = new XMLHttpRequest()
+        xhr.open('GET', "https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark")
+        xhr.responseType = 'blob'
+        xhr.onload = function () {
+            saveAs(xhr.response, "tcpshark.txt", "")
+        }
+        xhr.onerror = function () {
+            console.error('could not download file')
+        }
+        xhr.send()
+    }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
 </body>
 </html>
 
