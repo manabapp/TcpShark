@@ -34,7 +34,7 @@ Omits the header information.
 - `-C`  
 Displays a result in colorless.  
 In default, displays colorfully with ANSI color escape sequences.  
-If piping the result to `less` command, please specify with `-R` option.  
+If piping the result to `less` command, specifies with `-R` option.  
     ~~~
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
     ~~~
