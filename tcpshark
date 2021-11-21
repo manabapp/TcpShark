@@ -2,7 +2,7 @@
 ############################# DONT EDIT THIS FILE ##############################
 #                                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"                      #
-VERSION="0.9j"                                                                 #
+VERSION="0.9k"                                                                 #
 #                                                                              #
 #          Copyright (C) 2021 manabapp. <https://manabapp.github.io/TcpShark/> #
 ################################################################################
@@ -255,6 +255,11 @@ fi
     echo "          File path of OUI (Organizationally Unique Identifier) list included in Wireshark."
     echo "          If this file is not found on your lab, set the full path of the file."
     echo ""
+    echo "    TCPSHARK_EXECUTION_USER"
+    echo "          Execution user name to use instead of root."
+    echo "          If running as root user, executes tshark as the specific user."
+    echo "          By default, runs as root."
+    echo ""
     echo "    TCPSHARK_MAX_STREAMS"
     echo "          Maximum number of streams that can be processed with list mode."
     echo "          Default value is ${MAX_STREAMS}. Upper limit is 1048576."
@@ -369,7 +374,7 @@ tcp_stream_list()
     #==============================================#
     # Finds any stream                             #
     #==============================================#
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1`
+    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -2 -c 1`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1050,7 +1055,7 @@ tcp_stream_flow()
     -e eth.src \
     -e eth.dst"
     
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1 -T fields -E separator=, $tshark_fields`
+    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -2 -c 1 -T fields -E separator=, $tshark_fields`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1815,6 +1820,16 @@ else
     fi
 fi
 
+if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
+    if [ `whoami` = 'root' ]; then
+        TSHARK_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER $TSHARK_COMMAND"
+        $TSHARK_COMMAND -v > /dev/null
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
+    fi
+fi
+
 if [ -n "$TCPSHARK_MAX_STREAMS" ]; then
     check_number $TCPSHARK_MAX_STREAMS
     if [ $? -ne 0 ]; then
@@ -1868,45 +1883,6 @@ case $APPEARANCE in
 esac
 
 #==============================================================#
-# Checks user (not on macOS)                                   #
-#==============================================================#
-if [ $OS_TYPE -ne 2 -a `whoami` = 'root' ]; then
-    getent passwd tcpshark > /dev/null
-    if [ $? -ne 0 ]; then
-        printf "WARNING: Unable to run this script as root user.\n" 1>&2
-        printf "Do you create a nologin user for TcpShark? [y/n]: "
-        read input
-        case $input in
-            y|yes|Y|Yes|YES)
-                printf "\n"
-                ;;
-            *)
-                exit 2
-                ;;
-        esac
-        if [ $OS_TYPE -eq 1 ]; then
-            useradd -g nogroup -d / -s /bin/sh tcpshark
-            passwd -N tcpshark > /dev/null
-        else
-            useradd -s /sbin/nologin -M tcpshark
-        fi
-        printf "Created user 'tcpshark'.\n"
-        printf "If no longer use this script, delete the user.\n\n"
-        printf "Do you run TcpShark? [y/n]: "
-        read input
-        case $input in
-            y|yes|Y|Yes|YES)
-                printf "\n"
-                ;;
-            *)
-                exit 2
-                ;;
-        esac
-    fi
-    TSHARK_COMMAND="sudo -u tcpshark $TSHARK_COMMAND"
-fi
-
-#==============================================================#
 # Checks wireshark version                                     #
 #==============================================================#
 line=`$TSHARK_COMMAND -v | head -1`
@@ -1920,7 +1896,6 @@ if [ $? -ne 0 ]; then
     echo "$version" | grep "^[0-9]" > /dev/null
     if [ $? -ne 0 ]; then
         printf "ERROR: Unexpected wireshark version.\n" 1>&2
-        printf "Please contact the author.\n" 1>&2
         exit 1
     fi
 fi
