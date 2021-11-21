@@ -63,7 +63,7 @@ fi
     echo "    This utility displays visually the TCP stream for ease of analysis."
     echo ""
     echo "    How to use:"
-    echo "      First, please check TCP streams captured in file with \"list mode\"."
+    echo "      First, checks TCP streams captured in file with \"list mode\"."
     echo "      You can analyze the stream with \"flow mode\" by specifying index on list."
     echo ""
 if [ $OS_TYPE -ne 2 ]; then
@@ -85,7 +85,7 @@ fi
     echo "    -C"
     echo "          Displays a result in colorless."
     echo "          In default, displays colorfully with ANSI color escape sequences."
-    echo "          If piping the result to \"less\" command, please specify with -R option."
+    echo "          If piping the result to \"less\" command, specifies with -R option."
     echo ""
     echo "            $ tcpshark -r tcpdump.pcap -s 0 | less -R"
     echo ""
