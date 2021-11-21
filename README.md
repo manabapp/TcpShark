@@ -34,7 +34,7 @@ Omits the header information.
 - `-C`  
 Displays a result in colorless.  
 In default, displays colorfully with ANSI color escape sequences.  
-If piping the result to "less" command, please specify with -R option.  
+If piping the result to `less` command, please specify with `-R` option.  
     ~~~
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
     ~~~
@@ -44,12 +44,12 @@ Selects the format of the packet timestamp.
 The format can be one of:  
   ||||
   |:--|:--|:--|
-  |a|absolute time with no date|[default]|
-  |ad|absolute date and time||
-  |dd|delta time since the previous displayed packet||
-  |e|epoch time in seconds since Jan 1, 1970 00:00:00||
-  |r|relative time since the first packet in the capture file||
-  |rs|relative time since the first packet in the stream||
+  |`a`|absolute time with no date|[default]|
+  |`ad`|absolute date and time||
+  |`dd`|delta time since the previous displayed packet||
+  |`e`|epoch time in seconds since Jan 1, 1970 00:00:00||
+  |`r`|relative time since the first packet in the capture file||
+  |`rs`|relative time since the first packet in the stream||
 
 - `-p <port>`  
 Only streams with specified port are displayed.
@@ -199,5 +199,7 @@ Prints the version and exits.
 
 ## LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
+
+---
 
 Copyright (C) 2021 manabapp.
