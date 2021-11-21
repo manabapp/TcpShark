@@ -191,8 +191,8 @@ Prints the version and exits.
 ## ENVIRONMENT VARIABLES
 |Variable|Description|
 |:--|:--|
-|TCPSHARK_TSHARK_COMMAND|File path of executable command 'tshark'.<br>If the command is not found on your lab, set the full path of tshark.|
-|TCPSHARK_AWK_COMMAND|File path of executable command 'gawk', 'nawk', or 'awk'.<br>If such awk is not found on your lab, set the full path of awk.|
+|TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If the command is not found on your lab, set the full path of tshark.|
+|TCPSHARK_AWK_COMMAND|File path of executable command `gawk`, `nawk`, or `awk`.<br>If such awk is not found on your lab, set the full path of awk.|
 |TCPSHARK_WIRESHARK_OUIFILE|File path of OUI (Organizationally Unique Identifier) list included in Wireshark.<br>If this file is not found on your lab, set the full path of the file.|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed with list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
 |TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color (Dark[default] or Light).<br>|If your terminal's background is white color, set 'Light'.|
