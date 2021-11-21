@@ -2,14 +2,9 @@
 ############################# DONT EDIT THIS FILE ##############################
 #                                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"                      #
-VERSION="0.9i"                                                                 #
+VERSION="0.9j"                                                                 #
 #                                                                              #
-# Author:                                                                      #
-#   Hirose, Manabu <manabapp@gmail.com>                                        #
-#                                                                              #
-# Web site:                                                                    #
-#   https://manabapp.github.io/TcpShark/                                       #
-#                                                 Copyright (C) 2021 manabapp. #
+#          Copyright (C) 2021 manabapp. <https://manabapp.github.io/TcpShark/> #
 ################################################################################
 
 WIRESHARK_OUIFILE_LINUX="/usr/share/wireshark/manuf"
@@ -1800,7 +1795,7 @@ else
     fi
 fi
 if [ $FLAG_D -eq 1 ]; then
-    grep "gawk$" $AWK_COMMAND > /dev/null 2>&1
+    echo $AWK_COMMAND | grep "gawk$" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         printf "ERROR: Need gawk (GNU awk) for -d option.\n" 1>&2
         exit 1
