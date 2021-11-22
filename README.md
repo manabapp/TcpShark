@@ -198,6 +198,9 @@ Prints the version and exits.
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed with list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
 |TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or `Light`.<br>Default is `Dark`. If your terminal's background is whitish color, set `Light`.|
 
+# EXIT STATUS
+This utility exits 0 on success, or 1 if error.
+
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
 
