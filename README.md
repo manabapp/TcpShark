@@ -1,7 +1,7 @@
-## NAME
+# NAME
 `tcpshark` - Packet analyzer for TCP troubleshooting
 
-## SYNOPSIS
+# SYNOPSIS
 ### list mode
 ~~~
 tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-x | -f <field>]
@@ -11,7 +11,7 @@ tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d
 tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-x] [-f <field>]
 ~~~
 
-## DESCRIPTION
+# DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
 This utility displays visually the TCP stream for ease of analysis.
 
@@ -19,7 +19,7 @@ This utility displays visually the TCP stream for ease of analysis.
 First, checks TCP streams captured in file with "**list mode**".  
 You can analyze the stream with "**flow mode**" by specifying index on list.
 
-## OPTIONS
+# OPTIONS
 - `-r <infile>`  
 Reads packet data from infile.  
 This utility can analyze the file captured by Wireshark, tcpdump, snoop, etc.
@@ -93,7 +93,7 @@ Prints this help page.
 - `-V`  
 Prints the version and exits.
 
-## OUTPUT FORMAT
+# OUTPUT FORMAT
 
 ### list mode
 
@@ -188,7 +188,7 @@ Prints the version and exits.
     Custom FIELD       Value of specified custom field.
                        Only displays if each packet includes the field.
 
-## ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES
 |Variable|Description|
 |:--|:--|
 |TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If the command is not found on your lab, set the full path of tshark.|
@@ -198,7 +198,7 @@ Prints the version and exits.
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed with list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
 |TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or `Light`.<br>Default is `Dark`. If your terminal's background is whitish color, set `Light`.|
 
-## LICENSE
+# LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
 
 ---
