@@ -44,7 +44,7 @@ Selects the format of the packet timestamp.
 The format can be one of:  
   ||||
   |:--|:--|:--|
-  |`a`|absolute time with no date|[default]|
+  |`a`|absolute time with no date|Default|
   |`ad`|absolute date and time||
   |`dd`|delta time since the previous displayed packet||
   |`e`|epoch time in seconds since Jan 1, 1970 00:00:00||
@@ -193,10 +193,10 @@ Prints the version and exits.
 |:--|:--|
 |TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If the command is not found on your lab, set the full path of tshark.|
 |TCPSHARK_AWK_COMMAND|File path of executable command `gawk`, `nawk`, or `awk`.<br>If such awk is not found on your lab, set the full path of awk.|
-|TCPSHARK_WIRESHARK_OUIFILE|File path of OUI (Organizationally Unique Identifier) list included in Wireshark.<br>If this file is not found on your lab, set the full path of the file.|
-|TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If running as root user, executes tshark as the specific user.<br>By default, runs as root.|
+|TCPSHARK_WIRESHARK_OUIFILE|File path of OUI (Organizationally Unique Identifier) list included in Wireshark.<br>If this file is not found on your lab, set the full path of the file.<br>Default path is as follows:<br>&nbsp;&nbsp;&nbsp;`/usr/share/wireshark/manuf` (Linux, Solaris)<br>&nbsp;&nbsp;&nbsp;`/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf` (macOS)|
+|TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the user specified in this variable.<br>By default, executes tshark as root.|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed with list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
-|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color (Dark[default] or Light).<br>|If your terminal's background is white color, set 'Light'.|
+|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or `Light`.<br>Default is `Dark`. If your terminal's background is whitish color, set `Light`.|
 
 ## LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
