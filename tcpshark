@@ -1,11 +1,12 @@
 #!/bin/sh
-############################# DONT EDIT THIS FILE ##############################
-#                                                                              #
-NAME="tcpshark - Packet analyzer for TCP troubleshooting"                      #
-VERSION="0.9n"                                                                 #
-#                                                                              #
-#          Copyright (C) 2021 manabapp. <https://manabapp.github.io/TcpShark/> #
-################################################################################
+######################## DONT EDIT THIS FILE #########################
+#                                                                    #
+NAME="tcpshark - Packet analyzer for TCP troubleshooting"            #
+VERSION="0.9o"                                                       #
+AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                         #
+#                                                                    #
+#                                       Copyright (C) 2021 manabapp. #
+######################################################################
 
 WIRESHARK_OUIFILE_LINUX="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_SUNOS="/usr/share/wireshark/manuf"
