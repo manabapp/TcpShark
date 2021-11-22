@@ -2,7 +2,7 @@
 ############################# DONT EDIT THIS FILE ##############################
 #                                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"                      #
-VERSION="0.9l"                                                                 #
+VERSION="0.9m"                                                                 #
 #                                                                              #
 #          Copyright (C) 2021 manabapp. <https://manabapp.github.io/TcpShark/> #
 ################################################################################
@@ -275,10 +275,14 @@ fi
     echo "          Selects appearance according to your terminal color from 'Dark' or 'Light'."
     echo "          Default is 'Dark'. If your terminal's background is whitish color, set 'Light'."
     echo ""
+    echo "EXIT STATUS"
+    echo "    This utility exits 0 on success, or 1 if error."
+    echo ""
     echo "LICENSE"
     echo "    GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>"
     echo ""
-    echo "                                                                       Copyright (C) 2021 manabapp."
+    echo "Copyright (C) 2021 manabapp."
+    echo ""
     exit 0
 }
 
@@ -1737,8 +1741,6 @@ fi
 
 if [ $FLAG_D -eq 1 -a $OS_TYPE -ne 0 ]; then
     usage
-    #printf "ERROR: Can not use -d option.\n" 1>&2
-    #exit 1
 fi
 
 if [ $FLAG_S -eq 1 ]; then
