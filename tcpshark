@@ -2,7 +2,7 @@
 ############################# DONT EDIT THIS FILE ##############################
 #                                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"                      #
-VERSION="0.9k"                                                                 #
+VERSION="0.9l"                                                                 #
 #                                                                              #
 #          Copyright (C) 2021 manabapp. <https://manabapp.github.io/TcpShark/> #
 ################################################################################
@@ -10,6 +10,8 @@ VERSION="0.9k"                                                                 #
 WIRESHARK_OUIFILE_LINUX="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_SUNOS="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_DARWIN="/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf"
+MAX_STREAMS_DEFAULT=262144
+MAX_STREAMS_LIMIT=1048576
 
 usage()
 {
@@ -254,22 +256,24 @@ fi
     echo "    TCPSHARK_WIRESHARK_OUIFILE"
     echo "          File path of OUI (Organizationally Unique Identifier) list included in Wireshark."
     echo "          If this file is not found on your lab, set the full path of the file."
+    echo "          Default path is '${OUI_FILE}'."
     echo ""
     echo "    TCPSHARK_EXECUTION_USER"
     echo "          Execution user name to use instead of root."
-    echo "          If running as root user, executes tshark as the specific user."
-    echo "          By default, runs as root."
+    echo "          If you run as root user, TcpShark internally executes tshark as the user specified in"
+    echo "          this variable."
+    echo "          By default, executes tshark as root."
     echo ""
     echo "    TCPSHARK_MAX_STREAMS"
     echo "          Maximum number of streams that can be processed with list mode."
-    echo "          Default value is ${MAX_STREAMS}. Upper limit is 1048576."
+    echo "          Default value is ${MAX_STREAMS_DEFAULT}. Upper limit is ${MAX_STREAMS_LIMIT}."
     echo "          If a huge number of streams in your capture file, set the number of streams or each more."
     echo "          Note that it may require a lot of memory to process huge streams."
     echo ""
     echo "    TCPSHARK_APPEARANCE"
     echo "          TcpShark displays colorfully with ANSI color escape sequences."
-    echo "          Selects appearance according to your terminal color (Dark[default] or Light)."
-    echo "          If your terminal's background is white color, set 'Light'."
+    echo "          Selects appearance according to your terminal color from 'Dark' or 'Light'."
+    echo "          Default is 'Dark'. If your terminal's background is whitish color, set 'Light'."
     echo ""
     echo "LICENSE"
     echo "    GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>"
@@ -289,7 +293,7 @@ check_number()
     fi
     expr "$number" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
-        if [ $number -ge 0 -a $number -le 1048576 ]; then
+        if [ $number -ge 0 -a $number -le $MAX_STREAMS_LIMIT ]; then
             return 0
         fi
     fi
@@ -374,7 +378,7 @@ tcp_stream_list()
     #==============================================#
     # Finds any stream                             #
     #==============================================#
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -2 -c 1`
+    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1055,7 +1059,7 @@ tcp_stream_flow()
     -e eth.src \
     -e eth.dst"
     
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -2 -c 1 -T fields -E separator=, $tshark_fields`
+    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1 -T fields -E separator=, $tshark_fields`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1605,7 +1609,7 @@ OS_TYPE=0   # 0:Linux(default), 1:SunOS, 2:Darwin
 TSHARK_COMMAND="tshark"
 AWK_COMMAND="awk"
 OUI_FILE=$WIRESHARK_OUIFILE_LINUX
-MAX_STREAMS=262144
+MAX_STREAMS=$MAX_STREAMS_DEFAULT
 APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
 
 FLAG_H=0
