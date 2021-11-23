@@ -16,7 +16,7 @@ This utility displays visually TCP stream for ease of analysis.
 
 # HOW TO USE
 First, lists TCP streams in **list mode**.
-<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/143039909-f085eee7-5ed5-43c5-8977-5c4cd5308b58.png">
+<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/143043417-8edcc4ba-46ee-4107-abc7-4236755f31f0.png">
 
 Next, specifies the index of stream and looks over the packet flow in **flow mode**.
 <img width="1076" alt="ScreenShot1" src="https://user-images.githubusercontent.com/73800089/143040074-bca410e3-a854-42f3-a960-3c9f24522949.png">
@@ -126,7 +126,7 @@ Prints the version and exits.
                        Calculates sum-total, minimum, maximum and average value, if field type is
                        numerical (INT, UINT, BOOLEAN, DOUBLE, FLOAT, or RELATIVE_TIME).
 
-    Analysis           TCP analysis statistics in each direction.
+    Analysis           TCP analysis statistics.
 
                          ret : Retransmission
                          fst : Fast Retransmission
@@ -204,9 +204,14 @@ Prints the version and exits.
 This utility exits 0 on success, or 1 if error.
 
 # EXAMPLES
-<img width="1322" alt="ScreenShot2" src="https://user-images.githubusercontent.com/73800089/143040098-6a5c25fd-08ac-4417-9159-18deb92024f8.png">
-<img width="1304" alt="ScreenShot3" src="https://user-images.githubusercontent.com/73800089/143040103-a54c37cc-3955-477c-9352-09f197670eb2.png">
-<img width="1304" alt="ScreenShot4" src="https://user-images.githubusercontent.com/73800089/143040107-d3017447-2de6-433c-9b40-e9bb982a07e0.png">
+#### RTT statistics
+<img width="1322" alt="ScreenShot2" src="https://user-images.githubusercontent.com/73800089/143043475-6e4117ef-6077-4058-96a6-9b00d07ccb7c.png">
+
+#### TCP analysis statistics
+<img width="1322" alt="ScreenShot3" src="https://user-images.githubusercontent.com/73800089/143043487-624aa1bb-4917-44e3-bd79-12a19a5624e4.png">
+
+#### SYN retransmission 
+<img width="1322" alt="ScreenShot4" src="https://user-images.githubusercontent.com/73800089/143043492-9d1a43b7-90dd-4e82-91fe-8ed1a490f5e1.png">
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
