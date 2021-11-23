@@ -15,8 +15,8 @@ TcpShark is network analyzing script, powered by Wireshark.
 This utility displays visually TCP stream for ease of analysis.
 
 ### How to use:
-First, in "**list mode**", lists TCP streams captured in file.  
-Next, in "**flow mode**", looks over packet flow for the stream specified by an index of list.  
+First, lists TCP streams in **list mode**.  
+Next, specifies the index of stream and looks over the packet flow in **flow mode**.  
 In addition, you can analyze as you like by piping the result to `less -R` command.
 
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
