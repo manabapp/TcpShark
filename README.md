@@ -3,21 +3,23 @@
 
 # SYNOPSIS
 ### list mode
-~~~
-tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-x | -f <field>]
-~~~
+
+    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-x | -f <field>]
+
 ### flow mode
-~~~
-tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-x] [-f <field>]
-~~~
+
+    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-x] [-f <field>]
 
 # DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
-This utility displays visually the TCP stream for ease of analysis.
+This utility displays visually TCP stream for ease of analysis.
 
 ### How to use:
-First, checks TCP streams captured in file with "**list mode**".  
-You can analyze the stream with "**flow mode**" by specifying index on list.
+First, in "**list mode**", lists TCP streams captured in file.  
+Next, in "**flow mode**", looks over packet flow for the stream specified by an index of list.  
+In addition, you can analyze as you like by piping the result to `less -R` command.
+
+    $ tcpshark -r tcpdump.pcap -s 0 | less -R
 
 # OPTIONS
 - `-r <infile>`  
@@ -33,11 +35,7 @@ Omits the header information.
 
 - `-C`  
 Displays a result in colorless.  
-In default, displays colorfully with ANSI color escape sequences.  
-If piping the result to `less` command, specifies with `-R` option.  
-    ~~~
-    $ tcpshark -r tcpdump.pcap -s 0 | less -R
-    ~~~
+In default, displays colorfully with ANSI color escape sequences.
 
 - `-t a|ad|dd|e|r|rs`  
 Selects the format of the packet timestamp.  
