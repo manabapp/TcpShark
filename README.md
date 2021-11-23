@@ -14,9 +14,13 @@
 TcpShark is network analyzing script, powered by Wireshark.  
 This utility displays visually TCP stream for ease of analysis.
 
-### How to use:
-First, lists TCP streams in **list mode**.  
-Next, specifies the index of stream and looks over the packet flow in **flow mode**.  
+# HOW TO USE
+First, lists TCP streams in **list mode**.
+<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/143039909-f085eee7-5ed5-43c5-8977-5c4cd5308b58.png">
+
+Next, specifies the index of stream and looks over the packet flow in **flow mode**.
+<img width="1076" alt="ScreenShot1" src="https://user-images.githubusercontent.com/73800089/143040074-bca410e3-a854-42f3-a960-3c9f24522949.png">
+
 In addition, you can analyze as you like by piping the result to `less -R` command.
 
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
@@ -198,6 +202,11 @@ Prints the version and exits.
 
 # EXIT STATUS
 This utility exits 0 on success, or 1 if error.
+
+# EXAMPLES
+<img width="1322" alt="ScreenShot2" src="https://user-images.githubusercontent.com/73800089/143040098-6a5c25fd-08ac-4417-9159-18deb92024f8.png">
+<img width="1304" alt="ScreenShot3" src="https://user-images.githubusercontent.com/73800089/143040103-a54c37cc-3955-477c-9352-09f197670eb2.png">
+<img width="1304" alt="ScreenShot4" src="https://user-images.githubusercontent.com/73800089/143040107-d3017447-2de6-433c-9b40-e9bb982a07e0.png">
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
