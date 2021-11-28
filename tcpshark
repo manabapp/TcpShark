@@ -2,7 +2,7 @@
 ######################## DONT EDIT THIS FILE #########################
 #                                                                    #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"            #
-VERSION="0.9s"                                                       #
+VERSION="0.9t"                                                       #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                         #
 #                                                                    #
 #                                       Copyright (C) 2021 manabapp. #
@@ -153,6 +153,8 @@ fi
     echo "    TIME               Timestamp in first packet."
     echo ""
     echo "    Src/Dst ADDRESS    Source/Destination IP address and port."
+    echo "                       When IPv6 packets are encapsulated into IPv4 (6to4, 6in4, or 6rd), both address"
+    echo "                       pairs of the stream are displayed."
     echo ""
     echo "    Duration           Period between first/last packets."
     echo ""
@@ -255,8 +257,8 @@ fi
     echo ""
     echo "    TCPSHARK_EXECUTION_USER"
     echo "          Execution user name to use instead of root."
-    echo "          If you run as root user, TcpShark internally executes tshark as the user specified in"
-    echo "          this variable."
+    echo "          If you run as root user, TcpShark internally executes tshark as the user specified in this"
+    echo "          variable."
     echo "          By default, executes tshark as root."
     echo ""
     echo "    TCPSHARK_MAX_STREAMS"
@@ -355,12 +357,12 @@ output_value()
     echo "$1" | $AWK_COMMAND -F "\t" -v column="$2" '
     {
         if ($column == "") {
-            value = $column
+            value = ""
         }
         else {
             num = split($column, array, ",")
             if (num == 0)
-                value = column
+                value = ""
             else
                 value = array[num]
         }
@@ -610,10 +612,10 @@ tcp_stream_list()
                    -v appearance="$APPEARANCE" '
     function last_value(e) {
         if (e == "")
-            return e
+            return ""
         num = split(e, array, ",")
         if (num == 0)
-            return e
+            return ""
         return array[num]
     }
     function compare_streams(i1, v1, i2, v2) {
@@ -966,7 +968,8 @@ tcp_stream_list()
                 else
                     printf("                 ");
                 if (streams[i, "srcaddr"] != "")
-                    printf("  %15s:%-5d <----> %15s:%-5d", streams[i, "srcaddr"], streams[i, "srcport"], streams[i, "dstaddr"], streams[i, "dstport"]);
+                    printf("  %15s       <----> %15s      ", streams[i, "srcaddr"], streams[i, "dstaddr"]);
+
                 else
                     printf("                                                    ");
             }
@@ -1027,7 +1030,6 @@ tcp_stream_list()
 tcp_stream_flow()
 {
     tshark_filter="tcp.stream == $STREAM_INDEX"
-    ipv6=0
     custom_column=0
     
     #==============================================#
@@ -1054,17 +1056,10 @@ tcp_stream_flow()
     first_rtime=`echo "$line" | cut -f 1`
     srcport=`echo "$line" | cut -f 2`
     dstport=`echo "$line" | cut -f 3`
-    #srcaddr=`echo "$line" | cut -f 4`
-    #dstaddr=`echo "$line" | cut -f 5`
     srcaddr=`output_value "$line" 4`
     dstaddr=`output_value "$line" 5`
     srcaddr6=`output_value "$line" 6`
     dstaddr6=`output_value "$line" 7`
-    #if [ -z "$srcaddr" -o -z "$dstaddr" ]; then
-    #    ipv6=1
-    #    srcaddr=`echo "$line" | cut -f 6`
-    #    dstaddr=`echo "$line" | cut -f 7`
-    #fi
     srcmac=`echo "$line" | cut -f 8`
     dstmac=`echo "$line" | cut -f 9`
     
@@ -1078,13 +1073,6 @@ tcp_stream_flow()
     #==============================================#
     # Builds tshark's fields list                  #
     #==============================================#
-    #if [ $ipv6 -eq 0 ]; then
-    #   srcaddr_field="ip.src"
-    #   dstaddr_field="ip.dst"
-    #else
-    #   srcaddr_field="ipv6.src"
-    #   dstaddr_field="ipv6.dst"
-    #fi
     if [ $TIME_TYPE -eq 0 -o $TIME_TYPE -eq 1 ]; then
         time_field="frame.time"
     elif [ $TIME_TYPE -eq 2 ]; then
@@ -1202,15 +1190,15 @@ tcp_stream_flow()
         if [ $FLAG_F -eq 1 ]; then
             printf "CField: ${CUSTOM_FIELD}\n"
         fi
-        if [ -n "$srcaddr6" -a -n "$dstaddr6" ]; then
+        if [ -n "$srcaddr6" ]; then
             printf "Stream: ${ACES_BOLD}${srcaddr6}.${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr6}.${dstport}${ACES_END}\n"
-            if [ -n "$srcaddr" -a -n "$dstaddr" ]; then
-                printf "        ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
+            if [ -n "$srcaddr" ]; then
+                printf "        ${ACES_BOLD}${srcaddr}${ACES_END} <----> ${ACES_BOLD}${dstaddr}${ACES_END}\n"
             fi
         else
             printf "Stream: ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
         fi
-        if [ -n "$srcmac" -a -n "$dstmac" ]; then
+        if [ -n "$srcmac" -o -n "$dstmac" ]; then
             printf "        ${ACES_GRAY}${srcmac}"
             print_vendor $srcmac
             printf ", ${dstmac}"
@@ -1279,10 +1267,10 @@ tcp_stream_flow()
                    -v appearance="$APPEARANCE" '
     function last_value(e) {
         if (e == "")
-            return e
+            return ""
         num = split(e, array, ",")
         if (num == 0)
-            return e
+            return ""
         return array[num]
     }
     BEGIN {
