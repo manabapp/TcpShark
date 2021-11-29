@@ -2,7 +2,7 @@
 ######################## DONT EDIT THIS FILE #########################
 #                                                                    #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"            #
-VERSION="0.9u"                                                       #
+VERSION="0.9v"                                                       #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                         #
 #                                                                    #
 #                                       Copyright (C) 2021 manabapp. #
@@ -930,7 +930,7 @@ tcp_stream_list()
         num = 0
         if (descending)
             PROCINFO["sorted_in"] = "compare_streams";
-        for (i = 0; i < max_streams; i++) {
+        for (i in indexes) {
             if (!indexes[i])
                 continue
             num++
