@@ -1,19 +1,25 @@
 #!/bin/sh
-######################## DONT EDIT THIS FILE #########################
-#                                                                    #
-NAME="tcpshark - Packet analyzer for TCP troubleshooting"            #
-VERSION="0.9x"                                                       #
-AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                         #
-#                                                                    #
-#                                       Copyright (C) 2021 manabapp. #
-######################################################################
+##################### DONT EDIT THIS FILE ######################
+#                                                              #
+NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
+VERSION="0.9y"                                                 #
+AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
+#                                                              #
+#                                 Copyright (C) 2021 manabapp. #
+################################################################
 
+#==============================================================#
+# Defines                                                      #
+#==============================================================#
 WIRESHARK_OUIFILE_LINUX="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_SUNOS="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_DARWIN="/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf"
 MAX_STREAMS_DEFAULT=262144
 MAX_STREAMS_LIMIT=1048576
 
+#==============================================================#
+# Function: Prints usage                                       #
+#==============================================================#
 usage()
 {
 if [ $OS_TYPE -eq 0 ]; then
@@ -26,6 +32,9 @@ fi
     exit 1
 }
 
+#==============================================================#
+# Function: Prints version & md5 hash                          #
+#==============================================================#
 print_version()
 {
     cmd=$0
@@ -45,6 +54,9 @@ print_version()
     exit 0
 }
 
+#==============================================================#
+# Function: Prints on-line manual                              #
+#==============================================================#
 print_help()
 {
     echo "NAME"
@@ -283,6 +295,9 @@ fi
     exit 0
 }
 
+#==============================================================#
+# Function: Checks if an integer in the range                  #
+#==============================================================#
 check_number()
 {
     number=$1
@@ -301,6 +316,9 @@ check_number()
     return 1
 }
 
+#==============================================================#
+# Function: Returns field type                                 #
+#==============================================================#
 check_ftype()
 {
     $TSHARK_COMMAND -G fields | $AWK_COMMAND -F "\t" -v field="$1" '
@@ -334,6 +352,9 @@ check_ftype()
     return $?
 }
 
+#==============================================================#
+# Function: Returns end one of comma separated values          #
+#==============================================================#
 output_value()
 {
     echo "$1" | $AWK_COMMAND -F "\t" -v column="$2" '
@@ -352,6 +373,9 @@ output_value()
     } '
 }
 
+#==============================================================#
+# Function: Prints vendor name for MAC address                 #
+#==============================================================#
 print_vendor() 
 {
     mac=$1
@@ -371,6 +395,9 @@ print_vendor()
     printf "(%s)" "$vendor_name"
 }
 
+#==============================================================#
+# Function: Runs in list mode                                  #
+#==============================================================#
 tcp_stream_list()
 {
     tshark_filter="tcp"
@@ -1027,6 +1054,9 @@ tcp_stream_list()
     return $?
 }
 
+#==============================================================#
+# Function: Runs in flow mode                                  #
+#==============================================================#
 tcp_stream_flow()
 {
     tshark_filter="tcp.stream == $STREAM_INDEX"
