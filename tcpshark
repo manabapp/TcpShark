@@ -2,7 +2,7 @@
 ######################## DONT EDIT THIS FILE #########################
 #                                                                    #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"            #
-VERSION="0.9w"                                                       #
+VERSION="0.9x"                                                       #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                         #
 #                                                                    #
 #                                       Copyright (C) 2021 manabapp. #
@@ -417,7 +417,7 @@ tcp_stream_list()
     fi
     
     #==============================================#
-    # Finds specific stream                             #
+    # Finds specific stream                        #
     #==============================================#
     if [ $nofilter -eq 0 ]; then
         line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1`
@@ -1716,7 +1716,7 @@ if [ $FLAG_R -eq 0 ]; then
 fi
 
 if [ $FLAG_S -eq 0 ]; then
-    #### <list mode> ####
+    #### list mode ####
     if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 ]; then
         usage
     fi
@@ -1736,7 +1736,7 @@ if [ $FLAG_S -eq 0 ]; then
         usage
     fi
 else
-    #### <flow mode> ####
+    #### flow mode ####
     if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
         usage
     fi
