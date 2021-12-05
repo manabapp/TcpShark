@@ -95,7 +95,12 @@ fi
     echo ""
     echo "    -s <index>"
     echo "          Displays the specific stream in flow mode."
-    echo "          If no this option, runs in list mode."
+    echo ""
+    echo "    -n <number>"
+    echo "          Displays the specific packet in one mode."
+    echo "          In this mode, output of the following command is displayed as is."
+    echo ""
+    echo "            $ tshark -r <infile> -Y frame.number==<number> -V"
     echo ""
     echo "    -H"
     echo "          Omits the header information."
@@ -1650,6 +1655,8 @@ tcp_stream_one()
     $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
       $AWK_COMMAND -v appearance="$APPEARANCE" '
     BEGIN {
+        line_num = 0
+        
         ### ANSI Color Escape Sequences ###
         if (appearance == 0) {
             ACES_BGGRAY  = ""
@@ -1767,6 +1774,8 @@ tcp_stream_one()
             printf("\n")
             next
         }
+        line_num++
+        
         if (substr(line, 1, 1) != " ") {
             printf("%s%s%s\n", ACES_BGGRAY, line, ACES_END)
             next
@@ -1826,6 +1835,10 @@ tcp_stream_one()
         printf("%s\n", line)
     };
     END {
+        if (line_num == 0) {
+            print "WARNING: No such packet." > "/dev/stderr"
+            exit(1)
+        }
         exit(0)
     }'
 
