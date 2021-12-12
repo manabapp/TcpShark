@@ -4,11 +4,11 @@
 # SYNOPSIS
 ### list mode
 
-    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-x | -f <field>]
+    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-y | -f <field>]
 
 ### flow mode
 
-    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-x] [-f <field>]
+    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-y] [-f <field>]
 
 # DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
@@ -79,7 +79,7 @@ Calculated window size is displayed, if scaling.
 Relative sequence numbers and acknowledgement numbers are displayed.  
 In default, absolute numbers.
 
-- `-x`  
+- `-y`  
 TCP analysis information is displayed.  
 In detail, see "**OUTPUT FORMAT**".
 
