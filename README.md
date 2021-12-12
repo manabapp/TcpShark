@@ -203,16 +203,6 @@ Prints the version and exits.
 # EXIT STATUS
 This utility exits 0 on success, or 1 if error.
 
-# EXAMPLES
-#### RTT statistics
-<img width="1322" alt="ScreenShot2" src="https://user-images.githubusercontent.com/73800089/143043475-6e4117ef-6077-4058-96a6-9b00d07ccb7c.png">
-
-#### TCP analysis statistics
-<img width="1322" alt="ScreenShot3" src="https://user-images.githubusercontent.com/73800089/143043487-624aa1bb-4917-44e3-bd79-12a19a5624e4.png">
-
-#### SYN retransmission 
-<img width="1322" alt="ScreenShot4" src="https://user-images.githubusercontent.com/73800089/143043492-9d1a43b7-90dd-4e82-91fe-8ed1a490f5e1.png">
-
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
 
