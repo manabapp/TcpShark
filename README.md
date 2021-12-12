@@ -16,10 +16,10 @@ This utility displays visually TCP stream for ease of analysis.
 
 # HOW TO USE
 First, lists TCP streams in **list mode**.
-<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/143043417-8edcc4ba-46ee-4107-abc7-4236755f31f0.png">
+<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/145710097-b8706c0c-ca79-42fa-a517-2bc71d537481.png">
 
 Next, specifies the index of stream and looks over the packet flow in **flow mode**.
-<img width="1076" alt="ScreenShot1" src="https://user-images.githubusercontent.com/73800089/143040074-bca410e3-a854-42f3-a960-3c9f24522949.png">
+<img width="1076" alt="ScreenShot1" src="https://user-images.githubusercontent.com/73800089/145710099-fac677ae-1c79-48a8-b01e-b58301f9adb9.png">
 
 In addition, you can analyze as you like by piping the result to `less -R` command.
 
