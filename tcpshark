@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="1.0.2"                                                #
+VERSION="1.0.3"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2021 manabapp. #
@@ -23,11 +23,11 @@ MAX_STREAMS_LIMIT=1048576
 usage()
 {
 if [ $OS_TYPE -eq 0 ]; then
-    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-y | -f <field>]" 1>&2
+    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-z | -f <field>]" 1>&2
 else
-    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-y | -f <field>]" 1>&2
+    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 1>&2
 fi
-    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-y] [-f <field>]" 1>&2
+    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-f <field>]" 1>&2
     echo "       tcpshark -h  (TcpShark's Manual)" 1>&2
     exit 1
 }
@@ -65,13 +65,13 @@ print_help()
     echo "SYNOPSIS"
     echo "    <list mode>"
 if [ $OS_TYPE -eq 0 ]; then
-    echo "    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-y | -f <field>]" 
+    echo "    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-z | -f <field>]" 
 else
-    echo "    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-y | -f <field>]" 
+    echo "    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 
 fi
     echo ""
     echo "    <flow mode>"
-    echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-y] [-f <field>]"
+    echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-f <field>]"
     echo ""
     echo "DESCRIPTION"
     echo "    TcpShark is network analyzing script, powered by Wireshark."
@@ -139,7 +139,7 @@ fi
     echo "          Relative sequence numbers and acknowledgement numbers are displayed."
     echo "          In default, absolute numbers."
     echo ""
-    echo "    -y"
+    echo "    -z"
     echo "          TCP analysis information is displayed."
     echo "          In detail, see \"OUTPUT FORMAT\"."
     echo ""
@@ -545,7 +545,7 @@ tcp_stream_list()
         printf "===================================================="
         printf "================"
         printf "============="
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf "==="
             for key in $analysis_header ; do
                 printf "====="
@@ -570,7 +570,7 @@ tcp_stream_list()
         printf "                                                    "
         printf "                "
         printf "             "
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             i=`echo $analysis_header | wc -w`
             printf " | Analysis"
             while [ $i -gt 2 ]; do
@@ -593,7 +593,7 @@ tcp_stream_list()
         printf "                    Src/Dst ADDRESS                 "
         printf "        Duration"
         printf "  FLAGS      "
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf " | ${analysis_header} |"
         elif [ $FLAG_F -eq 1 ]; then
             printf " |  COUNT        MIN        MAX        AVG |  COUNT        MIN        MAX        AVG |"
@@ -610,7 +610,7 @@ tcp_stream_list()
         printf "===================================================="
         printf "================"
         printf "============="
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf "==="
             for key in $analysis_header ; do
                 printf "====="
@@ -630,7 +630,7 @@ tcp_stream_list()
     $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       $AWK_COMMAND -v time_type="$TIME_TYPE"           \
                    -v descending="$FLAG_D"             \
-                   -v analysis="$FLAG_Y"               \
+                   -v analysis="$FLAG_Z"               \
                    -v analysis_level="$ANALYSIS_LEVEL" \
                    -v custom="$FLAG_F"                 \
                    -v custom_column="$custom_column"   \
@@ -1206,7 +1206,7 @@ tcp_stream_flow()
         printf "======="
         printf "==============================="
         printf "========"
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
         if [ $FLAG_F -ne 0 ]; then
@@ -1248,7 +1248,7 @@ tcp_stream_flow()
         printf "FLAGS  "
         printf "         SEQ/ACK Number        "
         printf "  OPTION"
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf "  Analysis"
         fi
         if [ $FLAG_F -ne 0 ]; then
@@ -1269,7 +1269,7 @@ tcp_stream_flow()
         printf "======="
         printf "==============================="
         printf "========"
-        if [ $FLAG_Y -eq 1 ]; then
+        if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
         if [ $FLAG_F -ne 0 ]; then
@@ -1287,7 +1287,7 @@ tcp_stream_flow()
     $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       $AWK_COMMAND -v time_type="$TIME_TYPE"           \
                    -v first_rtime="$first_rtime"       \
-                   -v analysis="$FLAG_Y"               \
+                   -v analysis="$FLAG_Z"               \
                    -v analysis_level="$ANALYSIS_LEVEL" \
                    -v custom="$FLAG_F"                 \
                    -v custom_column="$custom_column"   \
@@ -1651,7 +1651,7 @@ FLAG_D=0
 FLAG_V=0
 FLAG_W=0
 FLAG_Q=0
-FLAG_Y=0
+FLAG_Z=0
 FLAG_R=0
 FLAG_S=0
 FLAG_T=0
@@ -1699,7 +1699,7 @@ esac
 #==============================================================#
 # Gets options                                                 #
 #==============================================================#
-while getopts "HC46dvwqyhVr:s:t:p:a:f:" flag; do
+while getopts "HC46dvwqzhVr:s:t:p:a:f:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -1710,7 +1710,7 @@ while getopts "HC46dvwqyhVr:s:t:p:a:f:" flag; do
         v) FLAG_V=1;;
         w) FLAG_W=1;;
         q) FLAG_Q=1;;
-        y) FLAG_Y=1;;
+        z) FLAG_Z=1;;
         h) print_help;;
         V) print_version;;
         r) FLAG_R=1; TSHARK_INFILE=$OPTARG;;
@@ -1762,7 +1762,7 @@ if [ $FLAG_S -eq 0 ]; then
     if [ $FLAG_6 -eq 1 -a $FLAG_A -eq 1 ]; then
         usage
     fi
-    if [ $FLAG_Y -eq 1 -a $FLAG_F -eq 1 ]; then
+    if [ $FLAG_Z -eq 1 -a $FLAG_F -eq 1 ]; then
         usage
     fi
 else
