@@ -187,7 +187,7 @@ Prints the version and exits.
                          [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
                          [O] OTHER(kind:XXX)     : TCP option's kind
 
-    Custom FIELD       Value of specified custom field.
+    Custom VALUE       Value of specified custom field.
                        Only displays if each packet includes the field.
 
 # ENVIRONMENT VARIABLES
