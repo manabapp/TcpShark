@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="1.0.3"                                                #
+VERSION="1.0.4"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2021 manabapp. #
@@ -250,7 +250,7 @@ fi
     echo "                         [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply"
     echo "                         [O] OTHER(kind:XXX)     : TCP option's kind"
     echo ""
-    echo "    Custom FIELD       Value of specified custom field."
+    echo "    Custom VALUE       Value of specified custom field."
     echo "                       Only displays if each packet includes the field."
     echo ""
     echo "ENVIRONMENT VARIABLES"
@@ -1252,7 +1252,7 @@ tcp_stream_flow()
             printf "  Analysis"
         fi
         if [ $FLAG_F -ne 0 ]; then
-            printf "  Custom FIELD"
+            printf "  Custom VALUE"
         else
             printf "  Option VALUES"
         fi
@@ -1607,7 +1607,7 @@ tcp_stream_flow()
             else if (cnt == 2) printf(" "); 
         }
         if (custom) {
-            #### Custom FIELD ####
+            #### Custom VALUE ####
             printf("  %s", e_custom_val)
         }
         else {
