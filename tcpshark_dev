@@ -1395,6 +1395,15 @@ tcp_stream_flow()
             return ""
         return array[num]
     }
+    function ctoi(c) {
+        if (c == "a" || c == "A")      return 10
+        else if (c == "b" || c == "B") return 11
+        else if (c == "c" || c == "C") return 12
+        else if (c == "d" || c == "D") return 13
+        else if (c == "e" || c == "E") return 14
+        else if (c == "f" || c == "F") return 15
+        else                           return int(c)
+    }
     function dump_data(payload) {
         len = int(length(payload) / 2)
         if (hexdump_length != 0 && hexdump_length < len)
@@ -1425,9 +1434,10 @@ tcp_stream_flow()
             dump_str = ""
             ascii_str = "    "
             while (i < len) {
-                hex_str = substr(payload, i * 2 + 1, 2)
-                dump_str = dump_str hex_str
-                dec = int("0x" hex_str)
+                hex_char1 = substr(payload, i * 2 + 1, 1)
+                hex_char2 = substr(payload, i * 2 + 2, 1)
+                dump_str = dump_str hex_char1 hex_char2
+                dec = ctoi(hex_char1) * 16 + ctoi(hex_char2)
                 if (dec >= 32 && dec <= 126)
                     ascii_str = ascii_str sprintf("%c", dec)
                 else
