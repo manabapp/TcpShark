@@ -2369,7 +2369,7 @@ esac
 # Checks custom filed                                          #
 #==============================================================#
 if [ $FLAG_X -eq 1 ]; then
-    $TSHARK_COMMAND -G fields | grep "\ttcp.payload\t" > /dev/null
+    $TSHARK_COMMAND -G fields | grep tcp.payload | cut -f 3 | grep ^tcp.payload$ > /dev/null
     if [ $? -ne 0 ]; then
         printf "ERROR: -x option not supported because your wireshark version is old.\n" 1>&2
         exit 1
