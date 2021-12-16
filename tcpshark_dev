@@ -2,10 +2,10 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.2.0 beta"                                           #
+VERSION="2.3.0 beta"                                           #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
-#                                 Copyright (C) 2022 manabapp. #
+#                                 Copyright (C) 2021 manabapp. #
 ################################################################
 
 #==============================================================#
@@ -163,6 +163,7 @@ fi
     echo "    -f <field>"
     echo "          Specified field is displayed."
     echo "          In list mode, statistics information is displayed in each direction."
+    echo "          In flow mode, can be specified up to twice."
     echo "          About available field, see Wireshark web site."
     echo ""
     echo "            https://www.wireshark.org/docs/dfref/"
@@ -183,7 +184,7 @@ fi
     echo "          Prints the version and exits."
     echo ""
     echo "OUTPUT FORMAT"
-    echo "    In each mode, streams or packets are output in the following format:"
+    echo "    Streams or packets are output in the following format:"
     echo ""
     echo "    <list mode>"
     echo "      Index              Stream index."
@@ -284,6 +285,8 @@ fi
     echo ""
     echo "      Custom VALUE       Value of specified custom field."
     echo "                         Only displays if each packet includes the field."
+    echo "                         If you specify -f option twice, 2nd field is displayed"
+    echo "                         in parentheses."
     echo ""
     echo "      Expert INFO        TCP expert information."
     echo "                         Additional information according to the specified type"
@@ -1127,6 +1130,7 @@ tcp_stream_flow()
 {
     tshark_filter="tcp.stream == $STREAM_INDEX"
     custom_column=0
+    custom_column2=0
     
     #==============================================#
     # Finds the stream                             #
@@ -1258,6 +1262,23 @@ tcp_stream_flow()
             tshark_fields="$tshark_fields -e $CUSTOM_FIELD"
         fi
     fi
+    if [ "$FLAG_F2" -eq 1 ]; then
+        duplicated=0
+        for field in $tshark_fields ; do
+            if [ $field = "-e" ]; then
+                continue
+            fi
+            custom_column2=`expr $custom_column2 + 1`
+            if [ $field = "$CUSTOM_FIELD2" ]; then
+                duplicated=1
+                break
+            fi
+        done
+        if [ $duplicated -eq 0 ]; then
+            custom_column2=0
+            tshark_fields="$tshark_fields -e $CUSTOM_FIELD2"
+        fi
+    fi
     if [ $FLAG_E -eq 1 ]; then
         case $EXPERT_TYPE in
             0) tshark_fields="$tshark_fields -e tcp.analysis.ack_rtt -e tcp.analysis.acks_frame";;
@@ -1298,7 +1319,11 @@ tcp_stream_flow()
         printf "TCP Stream flow\n"
         printf "Filter: ${tshark_filter}\n"
         if [ $FLAG_F -eq 1 ]; then
-            printf "CField: ${CUSTOM_FIELD}\n"
+            printf "CField: ${CUSTOM_FIELD}"
+            if [ $FLAG_F2 -eq 1 ]; then
+                printf " ${ACES_GRAY}(${ACES_END}${CUSTOM_FIELD2}${ACES_GRAY})${ACES_END}"
+            fi
+            printf "\n"
         fi
         if [ -n "$srcaddr6" ]; then
             printf "Stream: ${ACES_BOLD}${srcaddr6}.${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr6}.${dstport}${ACES_END}\n"
@@ -1381,6 +1406,8 @@ tcp_stream_flow()
                    -v hexdump_length="$HEXDUMP_LENGTH" \
                    -v custom="$FLAG_F"                 \
                    -v custom_column="$custom_column"   \
+                   -v custom2="$FLAG_F2"               \
+                   -v custom_column2="$custom_column2" \
                    -v expert="$FLAG_E"                 \
                    -v expert_type="$EXPERT_TYPE"       \
                    -v own_port="$srcport"              \
@@ -1607,6 +1634,15 @@ tcp_stream_flow()
         if (hexdump)
             e_payload = $(29 + analysis_num)
         if (custom) {
+            if (custom2) {
+                if (custom_column2 == 0) {
+                    if (custom_column == 0)
+                        custom_column2 = 30 + analysis_num
+                    else
+                        custom_column2 = 29 + analysis_num
+                }
+                e_custom_val2 = $custom_column2
+            }
             if (custom_column == 0)
                 custom_column = 29 + analysis_num
             e_custom_val = $custom_column
@@ -1781,6 +1817,8 @@ tcp_stream_flow()
         else if (custom) {
             #### Custom VALUE ####
             printf("  %s", e_custom_val)
+            if (custom2 && e_custom_val2 != "")
+                printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
         }
         else if (expert) {
             #### Expert INFO ####
@@ -2050,6 +2088,7 @@ FLAG_P=0
 FLAG_A=0
 FLAG_X=0
 FLAG_F=0
+FLAG_F2=0
 FLAG_E=0
 FLAG_N=0
 
@@ -2059,6 +2098,7 @@ EXPERT_TYPE=0
 TSHARK_INFILE=""
 TSHARK_OPTIONS=""
 CUSTOM_FIELD=""
+CUSTOM_FIELD2=""
 CUSTOM_FTYPE=0
 TIME_TYPE=0
 FILTER_PORT=0
@@ -2127,7 +2167,14 @@ while getopts "HC46dvwqzhVr:s:n:t:p:a:x:f:e:" flag; do
         p) FLAG_P=1; FILTER_PORT=$OPTARG;;
         a) FLAG_A=1; FILTER_ADDR=$OPTARG;;
         x) FLAG_X=1; HEXDUMP_LENGTH=$OPTARG;;
-        f) FLAG_F=1; CUSTOM_FIELD=$OPTARG;;
+        f) FLAG_F=1
+            if [ -z "$CUSTOM_FIELD" ]; then
+                CUSTOM_FIELD=$OPTARG
+            elif [ -z "$CUSTOM_FIELD2" -a $CUSTOM_FIELD != $OPTARG ]; then
+                FLAG_F2=1
+                CUSTOM_FIELD2=$OPTARG
+            fi
+            ;;
         e) FLAG_E=1
             case $OPTARG in
                 "rtt") EXPERT_TYPE=0;;
@@ -2389,11 +2436,18 @@ fi
 #==============================================================#
 # Checks custom filed                                          #
 #==============================================================#
-if [ $FLAG_F -eq 1 ]; then
+if [ $FLAG_F -ge 1 ]; then
     check_ftype $CUSTOM_FIELD
     CUSTOM_FTYPE=$?
     if [ $CUSTOM_FTYPE -eq 0 ]; then
         printf "ERROR: Field not supported ($CUSTOM_FIELD).\n" 1>&2
+        exit 1
+    fi
+fi
+if [ $FLAG_F -ge 2 ]; then
+    check_ftype $CUSTOM_FIELD2
+    if [ $? -eq 0 ]; then
+        printf "ERROR: Field not supported ($CUSTOM_FIELD2).\n" 1>&2
         exit 1
     fi
 fi
