@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="1.0.4"                                                #
+VERSION="2.0.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2021 manabapp. #
@@ -28,6 +28,7 @@ else
     echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 1>&2
 fi
     echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-f <field>]" 1>&2
+    echo "       tcpshark -r <infile> -n <number> [-C]" 1>&2
     echo "       tcpshark -h  (TcpShark's Manual)" 1>&2
     exit 1
 }
@@ -73,6 +74,9 @@ fi
     echo "    <flow mode>"
     echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-f <field>]"
     echo ""
+    echo "    <one mode>"
+    echo "    tcpshark -r <infile> -n <number> [-C]"
+    echo ""
     echo "DESCRIPTION"
     echo "    TcpShark is network analyzing script, powered by Wireshark."
     echo "    This utility displays visually TCP stream for ease of analysis."
@@ -91,7 +95,12 @@ fi
     echo ""
     echo "    -s <index>"
     echo "          Displays the specific stream in flow mode."
-    echo "          If no this option, runs in list mode."
+    echo ""
+    echo "    -n <number>"
+    echo "          Displays the specific packet in one mode."
+    echo "          In this mode, output of the following command is displayed as is."
+    echo ""
+    echo "            $ tshark -r <infile> -Y \"frame.number == <number>\" -V"
     echo ""
     echo "    -H"
     echo "          Omits the header information."
@@ -1586,7 +1595,7 @@ tcp_stream_flow()
         if (optset["sackperm"]) opt_label = opt_label "S"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
         if (optset["sack"])     opt_label = opt_label "s"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
         if (optset["tstamp"])   opt_label = opt_label "t"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
-        if (optset["other"])    opt_label = opt_label "O"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        if (optset["other"])    opt_label = opt_label ACES_RED "O" ACES_END; else opt_label = opt_label ACES_GRAY "-" ACES_END;
         printf("  %s", opt_label);
         
         if (analysis) {
@@ -1633,6 +1642,210 @@ tcp_stream_flow()
 }
 
 #==============================================================#
+# Function: Runs in one mode                                   #
+#==============================================================#
+tcp_stream_one()
+{
+    tshark_filter="frame.number == $FRAME_NUMBER"
+    
+    #==============================================#
+    # Executes tshark                              #
+    #==============================================#
+    printf "Now analyzing...\r" 1>&2
+    $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
+      $AWK_COMMAND -v appearance="$APPEARANCE" '
+    BEGIN {
+        line_num = 0
+        
+        ### ANSI Color Escape Sequences ###
+        if (appearance == 0) {
+            ACES_BGGRAY  = ""
+            ACES_BOLD    = ""
+            ACES_RED     = ""
+            ACES_GREEN   = ""
+            ACES_YELLOW  = ""
+            ACES_BLUE    = ""
+            ACES_MAGENTA = ""
+            ACES_CYAN    = ""
+            ACES_GRAY    = ""
+            ACES_END     = ""
+        }
+        else if (appearance == 1) {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;97m"
+            ACES_RED     = "\033[1;91m"
+            ACES_GREEN   = "\033[1;92m"
+            ACES_YELLOW  = "\033[1;93m"
+            ACES_BLUE    = "\033[1;94m"
+            ACES_MAGENTA = "\033[1;95m"
+            ACES_CYAN    = "\033[1;96m"
+            ACES_GRAY    = "\033[37m"
+            ACES_END     = "\033[0m"
+        }
+        else {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;30m"
+            ACES_RED     = "\033[1;31m"
+            ACES_GREEN   = "\033[1;32m"
+            ACES_YELLOW  = "\033[1;33m"
+            ACES_BLUE    = "\033[1;34m"
+            ACES_MAGENTA = "\033[1;35m"
+            ACES_CYAN    = "\033[1;36m"
+            ACES_GRAY    = "\033[90m"
+            ACES_END     = "\033[0m"
+        }
+        
+        tcplen_label = "TCP Segment Len"
+        tcpopt_label = "TCP Option"
+        
+        flag_labels["fin"]   = "Fin"
+        flag_labels["syn"]   = "Syn"
+        flag_labels["reset"] = "Reset"
+        flag_labels["push"]  = "Push"
+        flag_labels["ack"]   = "Acknowledgment"
+        flag_labels["urg"]   = "Urgent"
+        flag_labels["ecn"]   = "ECN-Echo"
+        flag_labels["cwr"]   = "Congestion Window Reduced (CWR)"
+        flag_labels["ns"]    = "Nonce"
+        flag_labels["res"]   = "Reserved"
+        
+        aces_colors["fin"]   = ACES_GREEN
+        aces_colors["syn"]   = ACES_CYAN
+        aces_colors["reset"] = ACES_RED
+        aces_colors["push"]  = ACES_BOLD
+        aces_colors["ack"]   = ACES_GRAY
+        aces_colors["urg"]   = ACES_MAGENTA
+        aces_colors["ecn"]   = ACES_YELLOW
+        aces_colors["cwr"]   = ACES_MAGENTA
+        aces_colors["ns"]    = ACES_YELLOW
+        aces_colors["res"]   = ACES_RED
+        
+        option_labels["nop"]       = "No-Operation (NOP)"
+        option_labels["eol"]       = "End of Option List (EOL)"
+        option_labels["timestamp"] = "Timestamps"
+        option_labels["mss"]       = "Maximum segment size"
+        option_labels["wscale"]    = "Window scale"
+        option_labels["sack_perm"] = "SACK permitted"
+        option_labels["sack"]      = "SACK"
+        
+        analysis_msgs["ret"] = "This frame is a (suspected) retransmission"
+        analysis_msgs["fst"] = "This frame is a (suspected) fast retransmission"
+        analysis_msgs["spu"] = "This frame is a (suspected) spurious retransmission"
+        analysis_msgs["dup"] = "Duplicate ACK"
+        analysis_msgs["out"] = "This frame is a (suspected) out-of-order segment"
+        analysis_msgs["los"] = "Previous segment(s) not captured (common at capture start)"
+        analysis_msgs["alo"] = "ACKed segment that wasn\047t captured (common at capture start)"
+        analysis_msgs["ful"] = "TCP window specified by the receiver is now completely full"
+        analysis_msgs["wup"] = "TCP window update"
+        analysis_msgs["zro"] = "TCP Zero Window segment"
+        analysis_msgs["zrp"] = "TCP Zero Window Probe"
+        analysis_msgs["zpa"] = "ACK to a TCP Zero Window Probe"
+        analysis_msgs["kep"] = "TCP keep-alive segment"
+        analysis_msgs["kpa"] = "ACK to a TCP keep-alive segment"
+        analysis_msgs["tfo"] = "TCP SYN with TFO Cookie"
+        analysis_msgs["afo"] = "TCP SYN-ACK accepting TFO data"
+        analysis_msgs["ifo"] = "TCP SYN-ACK ignoring TFO data"
+        analysis_msgs["prt"] = "A new tcp session is started with the same ports as an earlier session in this trace"
+        
+        aces_colors["ret"] = ACES_GREEN
+        aces_colors["fst"] = ACES_CYAN
+        aces_colors["spu"] = ACES_CYAN
+        aces_colors["dup"] = ACES_BLUE
+        aces_colors["out"] = ACES_BOLD
+        aces_colors["los"] = ACES_RED
+        aces_colors["alo"] = ACES_RED
+        aces_colors["ful"] = ACES_MAGENTA
+        aces_colors["wup"] = ACES_YELLOW
+        aces_colors["zro"] = ACES_BOLD
+        aces_colors["zrp"] = ACES_MAGENTA
+        aces_colors["zpa"] = ACES_YELLOW
+        aces_colors["kep"] = ACES_MAGENTA
+        aces_colors["kpa"] = ACES_YELLOW
+        aces_colors["tfo"] = ACES_BOLD
+        aces_colors["afo"] = ACES_MAGENTA
+        aces_colors["ifo"] = ACES_YELLOW
+        aces_colors["prt"] = ACES_BOLD
+    };
+    {
+        line = $0
+        len = length(line)
+        
+        if (len == 0) {
+            printf("\n")
+            next
+        }
+        line_num++
+        
+        if (substr(line, 1, 1) != " ") {
+            printf("%s%s %s\n", ACES_BGGRAY, line, ACES_END)
+            next
+        }
+        for (key in flag_labels) {
+            label = " = " flag_labels[key] ": Set"
+            if (index(line, label) > 0) {
+               printf("%s%s%s\n", aces_colors[key], line, ACES_END)
+               next
+            }
+            label = " = " flag_labels[key] ": Not set"
+            if (index(line, label) > 0) {
+               printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+               next
+            }
+        }
+        label = tcpopt_label " - "
+        if (index(line, label) > 0) {
+            for (key in option_labels) {
+                label = tcpopt_label " - " option_labels[key]
+                if (index(line, label) > 0) {
+                    printf("%s\n", line)
+                    next
+                }
+            }
+            printf("%s%s%s\n", ACES_RED, line, ACES_END)
+            next
+        }
+        for (key in analysis_msgs) {
+            label = "[" analysis_msgs[key] "]"
+            ptr = index(line, label)
+            if (ptr > 0) {
+               msg_len = length(analysis_msgs[key])
+               printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, aces_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
+               next
+            }
+        }
+        if (substr(line, 1, 8) == "        ") {
+            printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+            next
+        }
+        if (substr(line, len, 1) == "]") {
+            label = "[" tcplen_label ": "
+            ptr = index(line, label)
+            if (ptr > 0) {
+                ptr += length(label)
+                len_len = length(line) - ptr
+                printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
+                next
+            }
+            ptr = index(line, "[") 
+            if (ptr > 0) {
+                printf("%s%s%s%s\n", substr(line, 1, ptr - 1), ACES_GRAY, substr(line, ptr), ACES_END)
+                next
+            }
+        }
+        printf("%s\n", line)
+    };
+    END {
+        if (line_num == 0) {
+            print "WARNING: No such packet." > "/dev/stderr"
+            exit(1)
+        }
+        exit(0)
+    }'
+
+    return $?
+}
+
+#==============================================================#
 # Global variables                                             #
 #==============================================================#
 OS_TYPE=0   # 0:Linux(default), 1:SunOS, 2:Darwin
@@ -1658,6 +1871,7 @@ FLAG_T=0
 FLAG_P=0
 FLAG_A=0
 FLAG_F=0
+FLAG_N=0
 
 ANALYSIS_LEVEL=0
 TSHARK_INFILE=""
@@ -1668,6 +1882,7 @@ TIME_TYPE=0
 FILTER_PORT=0
 FILTER_ADDR=""
 STREAM_INDEX=0
+FRAME_NUMBER=0
 ACES_BOLD=""
 ACES_RED=""
 ACES_GREEN=""
@@ -1699,7 +1914,7 @@ esac
 #==============================================================#
 # Gets options                                                 #
 #==============================================================#
-while getopts "HC46dvwqzhVr:s:t:p:a:f:" flag; do
+while getopts "HC46dvwqzhVr:s:n:t:p:a:f:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -1715,6 +1930,7 @@ while getopts "HC46dvwqzhVr:s:t:p:a:f:" flag; do
         V) print_version;;
         r) FLAG_R=1; TSHARK_INFILE=$OPTARG;;
         s) FLAG_S=1; STREAM_INDEX=$OPTARG;;
+        n) FLAG_N=1; FRAME_NUMBER=$OPTARG;;
         t) FLAG_T=1
            case $OPTARG in
                "a")  TIME_TYPE=0;;
@@ -1745,7 +1961,26 @@ if [ $FLAG_R -eq 0 ]; then
     usage
 fi
 
-if [ $FLAG_S -eq 0 ]; then
+if [ $FLAG_S -eq 1 ]; then
+    #### flow mode ####
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_N -eq 1 ]; then
+        usage
+    fi
+elif [ $FLAG_N -eq 1 ]; then
+    #### one mode ####
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_H -eq 1 -o $FLAG_T -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_F -eq 1 ]; then
+        usage
+    fi
+else
     #### list mode ####
     if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 ]; then
         usage
@@ -1763,11 +1998,6 @@ if [ $FLAG_S -eq 0 ]; then
         usage
     fi
     if [ $FLAG_Z -eq 1 -a $FLAG_F -eq 1 ]; then
-        usage
-    fi
-else
-    #### flow mode ####
-    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
         usage
     fi
 fi
@@ -1963,10 +2193,12 @@ fi
 #==============================================================#
 # Analyzes packet capture                                      #
 #==============================================================#
-if [ $FLAG_S -eq 0 ]; then
-    tcp_stream_list
-else
+if [ $FLAG_S -eq 1 ]; then
     tcp_stream_flow
+elif [ $FLAG_N -eq 1 ]; then
+    tcp_stream_one
+else
+    tcp_stream_list
 fi
 
 exit $?
