@@ -12,7 +12,7 @@
     tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
                          [-z] [-f <field> | -e rtt|rto|dup]
 
-### flow mode
+### one mode
 
     tcpshark -r <infile> -n <number> [-C]
 
