@@ -46,7 +46,7 @@ Displays the specific stream in flow mode.
 Displays the specific packet in one mode.  
 In this mode, output of the following command is displayed as is.
 
-    $ tshark -r <infile> -Y "frame.number == <number>" -V
+  `$ tshark -r <infile> -Y "frame.number == <number>" -V`
 
 - `-H`  
 Omits the header information.  
