@@ -103,6 +103,7 @@ and Ethernet headers.
 - `-f <field>`  
 Specified field is displayed.  
 In list mode, statistics information is displayed in each direction.  
+In flow mode, can be specified up to twice.  
 About available field, see Wireshark web site.  
 https://www.wireshark.org/docs/dfref/
 
@@ -122,7 +123,7 @@ Prints this help page.
 Prints the version and exits.
 
 # OUTPUT FORMAT
-In each mode, streams or packets are output in the following format:  
+Streams or packets are output in the following format:  
 
 ### list mode
 
@@ -225,6 +226,8 @@ In each mode, streams or packets are output in the following format:
       
       Custom VALUE       Value of specified custom field.
                          Only displays if each packet includes the field.
+                         If you specify -f option twice, 2nd field is displayed
+                         in parentheses.
       
       Expert INFO        TCP expert information.
                          Additional information according to the specified type
