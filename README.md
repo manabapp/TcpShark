@@ -10,7 +10,7 @@
 ### flow mode
 
     tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
-                         [-z] [-f <field> | -e rtt|rto|dup]
+                         [-z] [-x <length> | -f <field> | -e rtt|rto|dup]
 
 ### one mode
 
@@ -20,7 +20,7 @@
 TcpShark is network analyzing script, powered by Wireshark.  
 This utility displays visually TCP stream for ease of analysis.
 
-# HOW TO USE
+### HOW TO USE
 First, lists TCP streams in **list mode**.
 <img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/145710097-b8706c0c-ca79-42fa-a517-2bc71d537481.png">
 
@@ -44,9 +44,6 @@ Displays the specific stream in flow mode.
 
 - `-n <number>`  
 Displays the specific packet in one mode.  
-In this mode, output of the following command is displayed as is.
-
-  `$ tshark -r <infile> -Y "frame.number == <number>" -V`
 
 - `-H`  
 Omits the header information.  
@@ -97,6 +94,12 @@ In default, absolute numbers.
 TCP analysis information is displayed.  
 In detail, see "**OUTPUT FORMAT**".
 
+- `-x <length>`  
+TCP segment data up to the specified bytes is output by hexadecimal  
+dump. If length is 0, all data is displayed.  
+NOTE: this data is TCP payload data, so it does not include TCP, IP,  
+and Ethernet headers.  
+
 - `-f <field>`  
 Specified field is displayed.  
 In list mode, statistics information is displayed in each direction.  
@@ -119,108 +122,119 @@ Prints this help page.
 Prints the version and exits.
 
 # OUTPUT FORMAT
+In each mode, streams or packets are output in the following format:  
 
 ### list mode
 
-    Index              Stream index.
-
-    TIME               Timestamp in first packet.
-
-    Src/Dst ADDRESS    Source/Destination IP address and port.
-                       When IPv6 packets are encapsulated into IPv4 (6to4, 6in4,
-                       or 6rd), both address pairs of the stream are displayed.
-
-    Duration           Period between first/last packets.
-
-    FLAGS              TCP flag's bitwize OR on all packets.
-
-                         F : Fin
-                         S : Syn
-                         R : Reset
-                         P : Push
-                         A : Acknowledgment
-                         U : Urgent
-                         E : ECN-Echo
-                         C : Congestion Window Reduced (CWR)
-                         N : Nonce
-
-    Packets Bytes      Number of packets count and total of TCP data length in 
-                       each direction.
-                       Note that data length is not a frame size.
-
-    Custom STATISTICS  Number of packets which includes the specified field.
-                       Calculates sum-total, minimum, maximum and average value, 
-                       if field type is numerical (INT, UINT, BOOLEAN, DOUBLE, 
-                       FLOAT, or RELATIVE_TIME).
-
-    Analysis           TCP analysis statistics.
-
-                         ret : Retransmission
-                         fst : Fast Retransmission
-                         spu : Spurious Retransmission  (Wireshark 1.12.0 or newer)
-                         dup : Duplicate ACK
-                         out : Out Of Order
-                         los : Previous Segment Unseen
-                         alo : ACKed Unseen Packet
-                         wup : Window update
-                         ful : Window full
-                         zro : Zero Window
-                         zrp : Zero Window Probe
-                         zpa : Zero Window Probe Ack
-                         kep : Keep Alive
-                         kpa : Keep Alive ACK
-                         tfo : SYN with TFO cookie      (Wireshark 2.0.0 or newer)
-                         afo : Accepting TFO data       (Wireshark 3.4.0 or newer)
-                         ifo : Ignoring TFO data        (Wireshark 3.4.0 or newer)
-                         prt : TCP Port numbers reused
+      Index              Stream index.
+      
+      TIME               Timestamp in first packet.
+      
+      Src/Dst ADDRESS    Source/Destination IP address and port.
+                         When IPv6 packets are encapsulated into IPv4 (6to4,
+                         6in4, or 6rd), both address pairs of the stream are
+                         displayed.
+      
+      Duration           Period between first/last packets.
+      
+      FLAGS              TCP flag's bitwize OR on all packets.
+      
+                           F : Fin
+                           S : Syn
+                           R : Reset
+                           P : Push
+                           A : Acknowledgment
+                           U : Urgent
+                           E : ECN-Echo
+                           C : Congestion Window Reduced (CWR)
+                           N : Nonce
+      
+      Packets Bytes      Number of packets count and total of TCP data length in
+                         each direction.
+                         Note that data length is not a frame size.
+      
+      Custom STATISTICS  Number of packets which includes the specified field.
+                         Calculates sum-total, minimum, maximum and average
+                         value, if field type is numerical (INT, UINT, BOOLEAN,
+                         DOUBLE, FLOAT, or RELATIVE_TIME).
+      
+      Analysis           TCP analysis statistics.
+      
+                           ret : Retransmission
+                           fst : Fast Retransmission
+                           spu : Spurious Retransmission  (Wireshark 1.12.0 or newer)
+                           dup : Duplicate ACK
+                           out : Out Of Order
+                           los : Previous Segment Unseen
+                           alo : ACKed Unseen Packet
+                           wup : Window update
+                           ful : Window full
+                           zro : Zero Window
+                           zrp : Zero Window Probe
+                           zpa : Zero Window Probe Ack
+                           kep : Keep Alive
+                           kpa : Keep Alive ACK
+                           tfo : SYN with TFO cookie      (Wireshark 2.0.0 or newer)
+                           afo : Accepting TFO data       (Wireshark 3.4.0 or newer)
+                           ifo : Ignoring TFO data        (Wireshark 3.4.0 or newer)
+                           prt : TCP Port numbers reused
 
 ### flow mode
 
-    No.                Packet number in capture file.
-
-    TIME               Timestamp in each packet.
-
-    WINDOW Size        TCP windows size.
-
-    Src/Dst PORT       Source or Destination port.
-
-    LENGTH             TCP segment length.
-
-    FLAGS              TCP flags.
+      No.                Packet number in capture file.
+      
+      TIME               Timestamp in each packet.
+      
+      WINDOW Size        TCP windows size.
+      
+      Src/Dst PORT       Source or Destination port.
+      
+      LENGTH             TCP segment length.
+      
+      FLAGS              TCP flags.
                        Please refer to the description in <list mode>.
+      
+      SEQ/ACK Number     Sequence or Acknowledgment number.
+      
+      OPTION             TCP options.
+      
+                           mwSstO
+                           ------
+                           |||||+ Other option (except EOL, NOP)
+                           ||||+- TCP Time Stamp Option
+                           |||+-- TCP SACK Option
+                           ||+--- TCP SACK Permitted Option
+                           |+---- TCP Window Scale Option
+                           +----- TCP MSS Option
+      
+      Analysis           TCP analysis information for TCP troubleshooting.
+                         Please refer to the description in <list mode>.
+      
+      Option VALUES      TCP Option's values (if some bits in OPTION area are
+                         set).
+      
+                           [m] MSS=XXX             : MSS value
+                           [w] WS=XXX(YYY)         : Shift count, multiplier
+                           [S] SACK_PERM=1         : ---
+                           [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge
+                           [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
+                           [O] OTHER(kind:XXX)     : TCP option's kind
+      
+      Payload DATA       Hexadecimal dump and printable ascii string of TCP
+                         segment data.
+      
+      Custom VALUE       Value of specified custom field.
+                         Only displays if each packet includes the field.
+      
+      Expert INFO        TCP expert information.
+                         Additional information according to the specified type
+                         is displayed.
 
-    SEQ/ACK Number     Sequence or Acknowledgment number.
+### flow mode
+Output of the following command is displayed as is.
 
-    OPTION             TCP options.
-
-                         mwSstO
-                         ------
-                         |||||+ Other option (except EOL, NOP)
-                         ||||+- TCP Time Stamp Option
-                         |||+-- TCP SACK Option
-                         ||+--- TCP SACK Permitted Option
-                         |+---- TCP Window Scale Option
-                         +----- TCP MSS Option
-
-    Analysis           TCP analysis information for TCP troubleshooting.
-                       Please refer to the description in <list mode>.
-
-    Option VALUES      TCP Option's values (if some bits in OPTION area are set).
-
-                         [m] MSS=XXX             : MSS value
-                         [w] WS=XXX(YYY)         : Shift count, multiplier
-                         [S] SACK_PERM=1         : ---
-                         [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge
-                         [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
-                         [O] OTHER(kind:XXX)     : TCP option's kind
-
-    Custom VALUE       Value of specified custom field.
-                       Only displays if each packet includes the field.
-
-    Expert INFO        TCP expert information.
-                       Additional information according to the specified type is
-                       displayed.
-
+    $ tshark -r <infile> -Y "frame.number == <number>" -V
+        
 # ENVIRONMENT VARIABLES
 |Variable|Description|
 |:--|:--|
