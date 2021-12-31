@@ -253,15 +253,23 @@ This utility exits 0 on success, or 1 if error.
 
 # REQUIREMENTS
 
+### Required Software
+- [Wireshark](https://www.wireshark.org)
+- [Cygwin](https://www.cygwin.com) 　(Windows only)
+
 ### Operating System
 - Linux
 - Solaris
 - macOS
 - Windows (Comming soon...)
 
-### Required Software
-- [Wireshark](https://www.wireshark.org)
-- [Cygwin](https://www.cygwin.com) 　(Windows only)
+Operation has been confirmed on the following platforms:
+- Cent OS 7.5, 8.4
+- Red Hat Enterprise Linux 7.7, 8.2
+- Ubuntu 20.04
+- Oracle Solaris 11.4 (Intel)
+- macOS 12.0.1 (Arm)
+- Windows 10
 
 # INSTALLATION
 
