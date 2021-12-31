@@ -267,7 +267,7 @@ This utility exits 0 on success, or 1 if error.
 
 ### Linux, Solaris, macOS
 1. Places the script file `tcpshark` in the following directory.  
-  "/usr/local/bin"
+  Directory: **/usr/local/bin**
 2. Gives you permission to execute the file.  
   `chmod 0755 tcpshark` 
 3. (Optional) Sets the following environment variables in .bash_profile, .zprofile, or etc, if your terminal background color is white.  
@@ -275,9 +275,11 @@ This utility exits 0 on success, or 1 if error.
 
 ### Windows
 1. Places the script file `tcpshark` in the following directory.  
-  "&lt;Cygwin install folder&gt;\usr\local\bin"
-3. (Optional) Sets the following environment variables in .bash_profile on Cygwin.  
-  `PATH="<Wireshark install folder>:${PATH}`
+  Directory: **&lt;Cygwin install folder&gt;\usr\local\bin**  
+  (e.g. **c:\cygwin\usr\local\bin**)
+2. Sets the following environment variables in .bash_profile on Cygwin.  
+  `PATH=<Wireshark install folder>:${PATH}`  
+  (e.g. `PATH="/cygdrive/c/Program Files/Wireshark:${PATH}"`)
 3. (Optional) Sets the following environment variables in .bash_profile on Cygwin, if your terminal background color is white.  
   `TCPSHARK_APPEARANCE=Light`
 
