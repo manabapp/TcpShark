@@ -274,21 +274,19 @@ FYR, operation has been confirmed on the following platforms:
 # INSTALLATION
 
 ### Linux, Solaris, macOS
-1. Places the script file `tcpshark` in the following directory.  
-  Directory: **/usr/local/bin**
+1. Places the script file `tcpshark` in **/usr/local/bin** directory.  
 2. Gives you permission to execute the file.  
   `chmod 0755 tcpshark` 
-3. **(Optional)** Sets the following environment variable in .bash_profile, .zprofile, or etc, if your terminal background color is white.  
+3. **(Optional)** Sets an environment variable in .bash_profile, .zprofile, or etc, if your terminal background color is white.  
   `TCPSHARK_APPEARANCE=Light`
 
 ### Windows
-1. Places the script file `tcpshark` in the following directory.  
-  Directory: **&lt;Cygwin install folder&gt;\usr\local\bin**  
+1. Places the script file `tcpshark` in **&lt;Cygwin install folder&gt;\usr\local\bin** directory.  
   (e.g. **c:\cygwin\usr\local\bin**)
-2. Sets the following environment variable in .bash_profile on Cygwin terminal.  
+2. Sets an environment variable in .bash_profile on Cygwin.  
   `PATH=<Wireshark install folder>:${PATH}`  
   (e.g. `PATH="/cygdrive/c/Program Files/Wireshark:${PATH}"`)
-3. **(Optional)** Sets the following environment variable in .bash_profile on Cygwin terminal, if your terminal background color is white.  
+3. **(Optional)** Sets an environment variable in .bash_profile on Cygwin, if your terminal background color is white.  
   `TCPSHARK_APPEARANCE=Light`
 
 # LICENSE
