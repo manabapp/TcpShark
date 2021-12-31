@@ -263,7 +263,7 @@ This utility exits 0 on success, or 1 if error.
 - macOS
 - Windows (Comming soon...)
 
-Operation has been confirmed on the following platforms:
+FYR, operation has been confirmed on the following platforms:
 - Cent OS 7.5, 8.4
 - Red Hat Enterprise Linux 7.7, 8.2
 - Ubuntu 20.04
