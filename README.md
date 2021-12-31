@@ -271,15 +271,18 @@ This utility exits 0 on success, or 1 if error.
   "/usr/local/bin"
 2. Gives you permission to execute the file.  
   `chmod 0755 tcpshark` 
-3. Sets `TCPSHARK_APPEARANCE=Light` in .bash_profile, .zprofile, or etc (only if your terminal background color is white).
+3. (Optional) Sets the following environment variables in .bash_profile, .zprofile, or etc, if your terminal background color is white.  
+  `TCPSHARK_APPEARANCE=Light`
 
 ### Windows
 Comming soon...
 
 1. Places the script file `tcpshark` in the following directory.  
   "&lt;Cygwin install folder&gt;\usr\local\bin"
-2. Gives you permission to execute the file.
-3. Sets `TCPSHARK_APPEARANCE=Light` in .bash_profile, .zprofile, or etc (only if your terminal background color is white).
+3. (Optional) Sets the following environment variables in .bash_profile on Cygwin.  
+  `PATH="&lt;Wireshark install folder&gt;:${PATH}`
+3. (Optional) Sets the following environment variables in .bash_profile on Cygwin, if your terminal background color is white.  
+  `TCPSHARK_APPEARANCE=Light`
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
