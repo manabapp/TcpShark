@@ -266,7 +266,6 @@ This utility exits 0 on success, or 1 if error.
 # INSTALLATION
 
 ### Linux, Solaris, macOS
-
 1. Places the script file `tcpshark` in the following directory.  
   "/usr/local/bin"
 2. Gives you permission to execute the file.  
@@ -275,12 +274,10 @@ This utility exits 0 on success, or 1 if error.
   `TCPSHARK_APPEARANCE=Light`
 
 ### Windows
-Comming soon...
-
 1. Places the script file `tcpshark` in the following directory.  
   "&lt;Cygwin install folder&gt;\usr\local\bin"
 3. (Optional) Sets the following environment variables in .bash_profile on Cygwin.  
-  `PATH="&lt;Wireshark install folder&gt;:${PATH}`
+  `PATH="<Wireshark install folder>:${PATH}`
 3. (Optional) Sets the following environment variables in .bash_profile on Cygwin, if your terminal background color is white.  
   `TCPSHARK_APPEARANCE=Light`
 
