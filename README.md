@@ -251,7 +251,7 @@ Output of the following command is displayed as is.
 # EXIT STATUS
 This utility exits 0 on success, or 1 if error.
 
-# SYSTEM REQUIREMENTS
+# REQUIREMENTS
 
 ### Operating System
 - Linux
@@ -259,9 +259,9 @@ This utility exits 0 on success, or 1 if error.
 - macOS
 - Windows (Comming soon...)
 
-### Other Software
+### Required Software
 - [Wireshark](https://www.wireshark.org)
-- [Cygwin](https://www.cygwin.com) (Windows only)
+- [Cygwin](https://www.cygwin.com) 　(Windows only)
 
 # INSTALLATION
 
