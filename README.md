@@ -267,12 +267,19 @@ This utility exits 0 on success, or 1 if error.
 
 ### Linux, Solaris, macOS
 
-1. Places the script file `tcpshark` in /usr/local/bin directory.
-2. Gives you permission to execute the file.
+1. Places the script file `tcpshark` in the following directory.  
+  "/usr/local/bin"
+2. Gives you permission to execute the file.  
+  `chmod 0755 tcpshark` 
 3. Sets `TCPSHARK_APPEARANCE=Light` in .bash_profile, .zprofile, or etc (only if your terminal background color is white).
 
 ### Windows
 Comming soon...
+
+1. Places the script file `tcpshark` in the following directory.  
+  "&lt;Cygwin install folder&gt;\usr\local\bin"
+2. Gives you permission to execute the file.
+3. Sets `TCPSHARK_APPEARANCE=Light` in .bash_profile, .zprofile, or etc (only if your terminal background color is white).
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
