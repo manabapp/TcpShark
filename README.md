@@ -269,7 +269,7 @@ FYR, operation has been confirmed on the following platforms:
 - Ubuntu 20.04
 - Oracle Solaris 11.4 (Intel)
 - macOS 12.0.1 (Arm)
-- Windows 10 21H1
+- Cygwin 3.3.3 in Windows 10 21H1
 
 # INSTALLATION
 
