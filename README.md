@@ -20,7 +20,7 @@
 TcpShark is network analyzing script, powered by Wireshark.  
 This utility displays visually TCP stream for ease of analysis.
 
-### HOW TO USE
+### How to use
 First, lists TCP streams in **list mode**.
 <img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/145710097-b8706c0c-ca79-42fa-a517-2bc71d537481.png">
 
