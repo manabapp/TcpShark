@@ -261,7 +261,7 @@ This utility exits 0 on success, or 1 if error.
 - Linux
 - Solaris
 - macOS
-- Windows (Comming soon...)
+- Windows
 
 FYR, operation has been confirmed on the following platforms:
 - Cent OS 7.5, 8.4
@@ -269,7 +269,7 @@ FYR, operation has been confirmed on the following platforms:
 - Ubuntu 20.04
 - Oracle Solaris 11.4 (Intel)
 - macOS 12.0.1 (Arm)
-- Windows 10
+- Windows 10 21H1
 
 # INSTALLATION
 
@@ -294,4 +294,4 @@ GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
 
 ---
 
-Copyright (C) 2021 manabapp.
+Copyright (C) 2022 manabapp.
