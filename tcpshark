@@ -2,10 +2,10 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.3.0"                                                #
+VERSION="2.4.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
-#                                 Copyright (C) 2021 manabapp. #
+#                                 Copyright (C) 2022 manabapp. #
 ################################################################
 
 #==============================================================#
@@ -14,6 +14,7 @@ AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 WIRESHARK_OUIFILE_LINUX="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_SUNOS="/usr/share/wireshark/manuf"
 WIRESHARK_OUIFILE_DARWIN="/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf"
+WIRESHARK_OUIFILE_CYGWIN="/cygdrive/c/Program Files/Wireshark/manuf"  # no use
 MAX_STREAMS_DEFAULT=262144
 MAX_STREAMS_LIMIT=1048576
 
@@ -252,7 +253,7 @@ fi
     echo "      LENGTH             TCP segment length."
     echo ""
     echo "      FLAGS              TCP flags."
-    echo "                       Please refer to the description in <list mode>."
+    echo "                         Please refer to the description in <list mode>."
     echo ""
     echo "      SEQ/ACK Number     Sequence or Acknowledgment number."
     echo ""
@@ -311,7 +312,12 @@ fi
     echo "          File path of OUI (Organizationally Unique Identifier) list included in"
     echo "          Wireshark."
     echo "          If this file is not found on your lab, set the full path of the file."
+if [ $OS_TYPE -eq 3 ]; then
+    echo "          Default path is a path of 'manuf' file under the folder installed"
+    echo "          Wireshark."
+else
     echo "          Default path is '${OUI_FILE}'."
+fi
     echo ""
     echo "    TCPSHARK_EXECUTION_USER"
     echo "          Execution user name to use instead of root."
@@ -333,12 +339,9 @@ fi
     echo "          If your terminal's background is whitish color, set 'Light'."
     echo ""
     echo "EXIT STATUS"
-    echo "    This utility exits 0 on success, or 1 if error."
+    echo "    This utility exits 0 on success, or 1 if error."
     echo ""
-    echo "LICENSE"
-    echo "    GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>"
-    echo ""
-    echo "Copyright (C) 2021 manabapp."
+    echo "Copyright (C) 2022 manabapp."
     echo ""
     exit 0
 }
@@ -390,7 +393,7 @@ check_length()
 #==============================================================#
 check_ftype()
 {
-    $TSHARK_COMMAND -G fields | $AWK_COMMAND -F "\t" -v field="$1" '
+    $PRE_COMMAND "$TSHARK_COMMAND" -G fields | "$AWK_COMMAND" -F "\t" -v field="$1" '
     BEGIN { ftype = 0 };
     /^F/ {
         if ($3 != field) next
@@ -424,9 +427,9 @@ check_ftype()
 #==============================================================#
 # Function: Returns end one of comma separated values          #
 #==============================================================#
-output_value()
+get_value()
 {
-    echo "$1" | $AWK_COMMAND -F "\t" -v column="$2" '
+    echo "$1" | "$AWK_COMMAND" -F "\t" -v column="$2" '
     {
         if ($column == "") {
             value = ""
@@ -443,25 +446,19 @@ output_value()
 }
 
 #==============================================================#
-# Function: Prints vendor name for MAC address                 #
+# Function: Returns vendor name for MAC address                #
 #==============================================================#
-print_vendor() 
+get_vendor()
 {
-    mac=$1
-    if [ ! -r "$OUI_FILE" ]; then
-        return
+    vendor_name="Unknown"
+    mac_oui=`echo "$1" | cut -c1-8`
+    if [ -r "$OUI_FILE" -a -n "$mac_oui" ]; then
+        name=`grep -i ^$mac_oui "$OUI_FILE" | head -1 | "$AWK_COMMAND" '{ printf($2) }'`
+        if [ -n "$name" ]; then
+            vendor_name=$name
+        fi
     fi
-    mac_oui=`echo $mac | cut -c1-8`
-    if [ -z "$mac_oui" ]; then
-        printf "(Unknown)"
-        return
-    fi
-    vendor_name=`grep -i ^$mac_oui "$OUI_FILE" | head -1 | $AWK_COMMAND '{print$2}'`
-    if [ -z "$vendor_name" ]; then
-        printf "(Unknown)"
-        return
-    fi
-    printf "(%s)" "$vendor_name"
+    printf "$vendor_name"
 }
 
 #==============================================================#
@@ -477,7 +474,7 @@ tcp_stream_list()
     #==============================================#
     # Finds any stream                             #
     #==============================================#
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1`
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -516,7 +513,7 @@ tcp_stream_list()
     # Finds specific stream                        #
     #==============================================#
     if [ $nofilter -eq 0 ]; then
-        line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1`
+        line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1`
         if [ $? -ne 0 ]; then
             return 1
         fi
@@ -696,16 +693,17 @@ tcp_stream_list()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
-      $AWK_COMMAND -v time_type="$TIME_TYPE"           \
-                   -v descending="$FLAG_D"             \
-                   -v analysis="$FLAG_Z"               \
-                   -v analysis_level="$ANALYSIS_LEVEL" \
-                   -v custom="$FLAG_F"                 \
-                   -v custom_column="$custom_column"   \
-                   -v custom_ftype="$CUSTOM_FTYPE"     \
-                   -v max_streams="$MAX_STREAMS"       \
-                   -v appearance="$APPEARANCE" '
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
+                     -v time_type="$TIME_TYPE"           \
+                     -v descending="$FLAG_D"             \
+                     -v analysis="$FLAG_Z"               \
+                     -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v custom="$FLAG_F"                 \
+                     -v custom_column="$custom_column"   \
+                     -v custom_ftype="$CUSTOM_FTYPE"     \
+                     -v max_streams="$MAX_STREAMS"       \
+                     -v appearance="$APPEARANCE" ' 
     function last_value(e) {
         if (e == "")
             return ""
@@ -786,6 +784,8 @@ tcp_stream_list()
             printf("  %s%10u%s", ACES_GRAY, bytes, ACES_END);
     }
     BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
         FS = "\t"
         exceeded = 0
         analysis_num = 0
@@ -1110,11 +1110,11 @@ tcp_stream_list()
             printf("\n");
         }
         if (num == 0) {
-            print "WARNING: No such TCP stream." > "/dev/stderr"
+            printf("WARNING: No such TCP stream.\n") > "/dev/stderr"
             exit(1)
         }
         if (exceeded) {
-            print "WARNING: Too many TCP streams." > "/dev/stderr"
+            printf("WARNING: Too many TCP streams.\n") > "/dev/stderr"
             exit(1)
         }
         exit(0)
@@ -1143,9 +1143,10 @@ tcp_stream_flow()
     -e ipv6.src \
     -e ipv6.dst \
     -e eth.src \
-    -e eth.dst"
+    -e eth.dst \
+    -e tcp.stream"  # dummy field for Cygwin
     
-    line=`$TSHARK_COMMAND -r $TSHARK_INFILE -R "$tshark_filter" -2 -c 1 -T fields $tshark_fields`
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 -T fields $tshark_fields`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1156,10 +1157,10 @@ tcp_stream_flow()
     first_rtime=`echo "$line" | cut -f 1`
     srcport=`echo "$line" | cut -f 2`
     dstport=`echo "$line" | cut -f 3`
-    srcaddr=`output_value "$line" 4`
-    dstaddr=`output_value "$line" 5`
-    srcaddr6=`output_value "$line" 6`
-    dstaddr6=`output_value "$line" 7`
+    srcaddr=`get_value "$line" 4`
+    dstaddr=`get_value "$line" 5`
+    srcaddr6=`get_value "$line" 6`
+    dstaddr6=`get_value "$line" 7`
     srcmac=`echo "$line" | cut -f 8`
     dstmac=`echo "$line" | cut -f 9`
     
@@ -1262,7 +1263,7 @@ tcp_stream_flow()
             tshark_fields="$tshark_fields -e $CUSTOM_FIELD"
         fi
     fi
-    if [ "$FLAG_F2" -eq 1 ]; then
+    if [ $FLAG_F2 -eq 1 ]; then
         duplicated=0
         for field in $tshark_fields ; do
             if [ $field = "-e" ]; then
@@ -1333,12 +1334,10 @@ tcp_stream_flow()
         else
             printf "Stream: ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
         fi
-        if [ -n "$srcmac" -o -n "$dstmac" ]; then
-            printf "        ${ACES_GRAY}${srcmac}"
-            print_vendor $srcmac
-            printf ", ${dstmac}"
-            print_vendor $dstmac
-            printf "${ACES_END}\n"
+        if [ -n "$srcmac" -a -n "$dstmac" ]; then
+            srcvendor=`get_vendor $srcmac`
+            dstvendor=`get_vendor $dstmac`
+            printf "        ${ACES_GRAY}${srcmac}(${srcvendor}), ${dstmac}(${dstvendor})${ACES_END}\n"
         fi
         printf "\n"
         printf "     No."
@@ -1397,23 +1396,24 @@ tcp_stream_flow()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
-      $AWK_COMMAND -v time_type="$TIME_TYPE"           \
-                   -v first_rtime="$first_rtime"       \
-                   -v analysis="$FLAG_Z"               \
-                   -v analysis_level="$ANALYSIS_LEVEL" \
-                   -v hexdump="$FLAG_X"                \
-                   -v hexdump_length="$HEXDUMP_LENGTH" \
-                   -v custom="$FLAG_F"                 \
-                   -v custom_column="$custom_column"   \
-                   -v custom2="$FLAG_F2"               \
-                   -v custom_column2="$custom_column2" \
-                   -v expert="$FLAG_E"                 \
-                   -v expert_type="$EXPERT_TYPE"       \
-                   -v own_port="$srcport"              \
-                   -v own_ipaddr="$srcaddr"            \
-                   -v own_ipaddr6="$srcaddr6"          \
-                   -v appearance="$APPEARANCE" '
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
+                     -v time_type="$TIME_TYPE"           \
+                     -v first_rtime="$first_rtime"       \
+                     -v analysis="$FLAG_Z"               \
+                     -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v hexdump="$FLAG_X"                \
+                     -v hexdump_length="$HEXDUMP_LENGTH" \
+                     -v custom="$FLAG_F"                 \
+                     -v custom_column="$custom_column"   \
+                     -v custom2="$FLAG_F2"               \
+                     -v custom_column2="$custom_column2" \
+                     -v expert="$FLAG_E"                 \
+                     -v expert_type="$EXPERT_TYPE"       \
+                     -v own_port="$srcport"              \
+                     -v own_ipaddr="$srcaddr"            \
+                     -v own_ipaddr6="$srcaddr6"          \
+                     -v appearance="$APPEARANCE" '
     function last_value(e) {
         if (e == "")
             return ""
@@ -1493,6 +1493,8 @@ tcp_stream_flow()
         }
     }
     BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
         FS = "\t"
         analysis_num = 0
         
@@ -1868,9 +1870,12 @@ tcp_stream_one()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $TSHARK_COMMAND -r $TSHARK_INFILE -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
-      $AWK_COMMAND -v appearance="$APPEARANCE" '
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE" \
+                     -v appearance="$APPEARANCE" '
     BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
         line_num = 0
         
         ### ANSI Color Escape Sequences ###
@@ -1911,8 +1916,9 @@ tcp_stream_one()
             ACES_END     = "\033[0m"
         }
         
-        tcplen_label = "TCP Segment Len"
-        tcpopt_label = "TCP Option"
+        tcpindex_label = "Stream index"
+        tcplen_label   = "TCP Segment Len"
+        tcpopt_label   = "TCP Option"
         
         flag_labels["fin"]   = "Fin"
         flag_labels["syn"]   = "Syn"
@@ -2042,6 +2048,14 @@ tcp_stream_one()
                 printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
                 next
             }
+            label = "[" tcpindex_label ": "
+            ptr = index(line, label)
+            if (ptr > 0) {
+                ptr += length(label)
+                len_len = length(line) - ptr
+                printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
+                next
+            }
             ptr = index(line, "[") 
             if (ptr > 0) {
                 printf("%s%s%s%s\n", substr(line, 1, ptr - 1), ACES_GRAY, substr(line, ptr), ACES_END)
@@ -2052,7 +2066,7 @@ tcp_stream_one()
     };
     END {
         if (line_num == 0) {
-            print "WARNING: No such packet." > "/dev/stderr"
+            printf("WARNING: No such packet.\n") > "/dev/stderr"
             exit(1)
         }
         exit(0)
@@ -2064,11 +2078,12 @@ tcp_stream_one()
 #==============================================================#
 # Global variables                                             #
 #==============================================================#
-OS_TYPE=0   # 0:Linux(default), 1:SunOS, 2:Darwin
+OS_TYPE=0   # 0:Linux, 1:SunOS, 2:Darwin, 3:Cygwin
 
+PRE_COMMAND=""
 TSHARK_COMMAND="tshark"
 AWK_COMMAND="awk"
-OUI_FILE=$WIRESHARK_OUIFILE_LINUX
+OUI_FILE="manuf"
 MAX_STREAMS=$MAX_STREAMS_DEFAULT
 APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
 
@@ -2116,20 +2131,29 @@ ACES_GRAY=""
 ACES_END=""
  
 #==============================================================#
-# Checks OS type                                               #
+# Checks OS type, and sets oui file path                       #
 #==============================================================#
-case `uname -s` in
-    Linux)
+platform=`uname -s`
+case $platform in
+    Linux*)
         OS_TYPE=0
-        OUI_FILE=$WIRESHARK_OUIFILE_LINUX
+        OUI_FILE="$WIRESHARK_OUIFILE_LINUX"
         ;;
-    SunOS)
+    SunOS*)
         OS_TYPE=1
-        OUI_FILE=$WIRESHARK_OUIFILE_SUNOS
+        OUI_FILE="$WIRESHARK_OUIFILE_SUNOS"
         ;;
-    Darwin)
+    Darwin*)
         OS_TYPE=2
-        OUI_FILE=$WIRESHARK_OUIFILE_DARWIN
+        OUI_FILE="$WIRESHARK_OUIFILE_DARWIN"
+        ;;
+    CYGWIN*)
+        OS_TYPE=3
+        OUI_FILE=""  # set later
+        ;;
+    *)
+        printf "ERROR: platform not supported (${platform}).\n" 1>&2
+        exit 1
         ;;
 esac
 
@@ -2150,7 +2174,7 @@ while getopts "HC46dvwqzhVr:s:n:t:p:a:x:f:e:" flag; do
         z) FLAG_Z=1;;
         h) print_help;;
         V) print_version;;
-        r) FLAG_R=1; TSHARK_INFILE=$OPTARG;;
+        r) FLAG_R=1; TSHARK_INFILE="$OPTARG";;
         s) FLAG_S=1; STREAM_INDEX=$OPTARG;;
         n) FLAG_N=1; FRAME_NUMBER=$OPTARG;;
         t) FLAG_T=1
@@ -2271,27 +2295,29 @@ fi
 #==============================================================#
 # Checks package installation & enviroment variables           #
 #==============================================================#
+tshark_fullpath=""
 if [ -n "$TCPSHARK_TSHARK_COMMAND" ]; then
-    if [ ! -x $TCPSHARK_TSHARK_COMMAND ]; then
+    if [ ! -x "$TCPSHARK_TSHARK_COMMAND" ]; then
         printf "ERROR: Invalid enviroment variable (TCPSHARK_TSHARK_COMMAND).\n" 1>&2
         exit 1
     fi
-    TSHARK_COMMAND=$TCPSHARK_TSHARK_COMMAND
+    TSHARK_COMMAND="$TCPSHARK_TSHARK_COMMAND"
+    tshark_fullpath="$TCPSHARK_TSHARK_COMMAND"
 else
-    which $TSHARK_COMMAND > /dev/null 2>&1
+    which "$TSHARK_COMMAND" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         printf "ERROR: ${TSHARK_COMMAND} not found.\n" 1>&2
-        printf "Please install Wireshark package.\n" 1>&2
         exit 1
     fi
+    tshark_fullpath=`which "$TSHARK_COMMAND"`
 fi
 
 if [ -n "$TCPSHARK_AWK_COMMAND" ]; then
-    if [ ! -x $TCPSHARK_AWK_COMMAND ]; then
+    if [ ! -x "$TCPSHARK_AWK_COMMAND" ]; then
         printf "ERROR: Invalid enviroment variable (TCPSHARK_AWK_COMMAND).\n" 1>&2
         exit 1
     fi
-    AWK_COMMAND=$TCPSHARK_AWK_COMMAND
+    AWK_COMMAND="$TCPSHARK_AWK_COMMAND"
 else
     for cmd in gawk nawk awk; do
         which $cmd > /dev/null 2>&1
@@ -2306,7 +2332,7 @@ else
     fi
 fi
 if [ $FLAG_D -eq 1 ]; then
-    echo $AWK_COMMAND | grep "gawk$" > /dev/null 2>&1
+    echo "$AWK_COMMAND" | grep "gawk$" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         printf "ERROR: Need gawk (GNU awk) for -d option.\n" 1>&2
         exit 1
@@ -2314,13 +2340,20 @@ if [ $FLAG_D -eq 1 ]; then
 fi
 
 if [ -n "$TCPSHARK_WIRESHARK_OUIFILE" ]; then
-    if [ ! -r $TCPSHARK_WIRESHARK_OUIFILE ]; then
+    if [ ! -r "$TCPSHARK_WIRESHARK_OUIFILE" ]; then
         printf "ERROR: Invalid enviroment variable (TCPSHARK_WIRESHARK_OUIFILE).\n" 1>&2
         exit 1
     fi
-    OUI_FILE=$TCPSHARK_WIRESHARK_OUIFILE
+    OUI_FILE="$TCPSHARK_WIRESHARK_OUIFILE"
+elif [ -n "$OUI_FILE" ]; then
+    if [ ! -f "$OUI_FILE" ]; then
+        printf "ERROR: OUI file not found.\n" 1>&2
+        exit 1
+    fi
 else
-    if [ ! -f $OUI_FILE ]; then
+    dir=`dirname "$tshark_fullpath"`
+    OUI_FILE="${dir}/manuf"
+    if [ ! -f "$OUI_FILE" ]; then
         printf "ERROR: OUI file not found.\n" 1>&2
         exit 1
     fi
@@ -2328,8 +2361,8 @@ fi
 
 if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
     if [ `whoami` = 'root' ]; then
-        TSHARK_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER $TSHARK_COMMAND"
-        $TSHARK_COMMAND -v > /dev/null
+        PRE_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER"
+        $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null
         if [ $? -ne 0 ]; then
             exit 1
         fi
@@ -2396,7 +2429,7 @@ esac
 #   2.0.0  - 3.3.*  : ANAYSIS_LEVEL => 2                       #
 #   3.4.0  - *.*.*  : ANAYSIS_LEVEL => 3                       #
 #==============================================================#
-line=`$TSHARK_COMMAND -v | head -1`
+line=`$PRE_COMMAND "$TSHARK_COMMAND" -v | head -1`
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -2426,7 +2459,7 @@ esac
 # Checks custom filed                                          #
 #==============================================================#
 if [ $FLAG_X -eq 1 ]; then
-    $TSHARK_COMMAND -G fields | grep tcp.payload | cut -f 3 | grep ^tcp.payload$ > /dev/null
+    $PRE_COMMAND "$TSHARK_COMMAND" -G fields | grep tcp.payload | cut -f 3 | grep ^tcp.payload$ > /dev/null
     if [ $? -ne 0 ]; then
         printf "ERROR: -x option not supported because your wireshark version is old.\n" 1>&2
         exit 1
