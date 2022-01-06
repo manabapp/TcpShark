@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.4.0"                                                #
+VERSION="2.4.1"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -2469,7 +2469,7 @@ fi
 #==============================================================#
 # Checks custom filed                                          #
 #==============================================================#
-if [ $FLAG_F -ge 1 ]; then
+if [ $FLAG_F -eq 1 ]; then
     check_ftype $CUSTOM_FIELD
     CUSTOM_FTYPE=$?
     if [ $CUSTOM_FTYPE -eq 0 ]; then
@@ -2477,7 +2477,7 @@ if [ $FLAG_F -ge 1 ]; then
         exit 1
     fi
 fi
-if [ $FLAG_F -ge 2 ]; then
+if [ $FLAG_F2 -eq 1 ]; then
     check_ftype $CUSTOM_FIELD2
     if [ $? -eq 0 ]; then
         printf "ERROR: Field not supported ($CUSTOM_FIELD2).\n" 1>&2
