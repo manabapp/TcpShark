@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.4.3"                                                #
+VERSION="2.4.4"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -312,12 +312,13 @@ else
     echo "          Default path is '${OUI_FILE}'."
 fi
     echo ""
+if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
     echo "    TCPSHARK_EXECUTION_USER"
     echo "          Execution user name to use instead of root."
     echo "          If you run as root user, TcpShark internally executes tshark as the"
     echo "          user specified in this variable."
-    echo "          By default, executes tshark as root."
     echo ""
+fi
     echo "    TCPSHARK_MAX_STREAMS"
     echo "          Maximum number of streams that can be processed in list mode."
     echo "          Default value is ${MAX_STREAMS_DEFAULT}. Upper limit is ${MAX_STREAMS_LIMIT}."
@@ -2386,12 +2387,14 @@ else
     fi
 fi
 
-if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
-    if [ `whoami` = 'root' ]; then
-        PRE_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER"
-        $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null
-        if [ $? -ne 0 ]; then
-            exit 1
+if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
+    if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
+        if [ `whoami` = 'root' ]; then
+            PRE_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER"
+            $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
         fi
     fi
 fi
