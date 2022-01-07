@@ -242,7 +242,6 @@ Output of the following command is displayed as is.
 |Variable|Description|
 |:--|:--|
 |TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If the command is not found on your lab, set the full path of tshark.|
-|TCPSHARK_AWK_COMMAND|File path of executable command `gawk`, `nawk`, or `awk`.<br>If such awk is not found on your lab, set the full path of awk.|
 |TCPSHARK_WIRESHARK_OUIFILE|File path of OUI (Organizationally Unique Identifier) list included in<br>Wireshark.<br>If this file is not found on your lab, set the full path of the file.<br>Default path is as follows:<br>&nbsp;&nbsp;&nbsp;`/usr/share/wireshark/manuf` (**Linux**, **Solaris**)<br>&nbsp;&nbsp;&nbsp;`/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf` (**macOS**)<br>&nbsp;&nbsp;&nbsp;Path of 'manuf' file under the folder installed Wireshark (**Windows**)|
 |TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the<br>user specified in this variable.<br>By default, executes tshark as root.|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of<br>streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
