@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.4.6"                                                #
+VERSION="2.5.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -13,6 +13,8 @@ AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #==============================================================#
 MAX_STREAMS_DEFAULT=262144
 MAX_STREAMS_LIMIT=1048576
+MAX_INFOLEN_DEFAULT=48
+MAX_LENGTH_LIMIT=65536
 
 #==============================================================#
 # Function: Prints usage                                       #
@@ -24,7 +26,7 @@ if [ $OS_TYPE -eq 0 ]; then
 else
     echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 1>&2
 fi
-    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-x <length> | -f <field> | -e rtt|rto|dup]" 1>&2
+    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]" 1>&2
     echo "       tcpshark -r <infile> -n <number> [-C]" 1>&2
     echo "       tcpshark -h  (TcpShark's Manual)" 1>&2
     exit 1
@@ -71,7 +73,7 @@ fi
     echo ""
     echo "    <flow mode>"
     echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]"
-    echo "                         [-z] [-x <length> | -f <field> | -e rtt|rto|dup]"
+    echo "                         [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]"
     echo ""
     echo "    <one mode>"
     echo "    tcpshark -r <infile> -n <number> [-C]"
@@ -150,6 +152,9 @@ fi
     echo "    -z"
     echo "          TCP analysis information is displayed."
     echo "          In detail, see \"OUTPUT FORMAT\"."
+    echo ""
+    echo "    -i"
+    echo "          Information for upper layer protocol is displayed."
     echo ""
     echo "    -x <length>"
     echo "          TCP segment data up to the specified bytes is output by hexadecimal"
@@ -277,6 +282,11 @@ fi
     echo "                           [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply"
     echo "                           [O] OTHER(kind:XXX)     : TCP option's kind"
     echo ""
+    echo "      Protocol           Upper layer protocol over TCP/IP."
+    echo ""
+    echo "      Information        Information for upper layer protocol."
+    echo "                         Same contents as Wireshark 'Info' field is displayed."
+    echo ""
     echo "      Payload DATA       Hexadecimal dump and printable ascii string of TCP"
     echo "                         segment data."
     echo ""
@@ -332,6 +342,12 @@ fi
     echo "          'Light'. Default is 'Dark'."
     echo "          If your terminal's background is whitish color, set 'Light'."
     echo ""
+    echo "    TCPSHARK_MAX_INFORMATION_LENGTH"
+    echo "          Maximum length of protocol information in flow mode."
+    echo "          If an information is longer than this length, the information is"
+    echo "          truncated to this length."
+    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. If 0, not truncated."
+    echo ""
     echo "EXIT STATUS"
     echo "    This utility exits 0 on success, or 1 if error."
     echo ""
@@ -375,7 +391,7 @@ check_length()
     fi
     expr "$length" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
-        if [ $length -ge 0 -a $length -le 65536 ]; then
+        if [ $length -ge 0 -a $length -le $MAX_LENGTH_LIMIT ]; then
             return 0
         fi
     fi
@@ -1278,6 +1294,13 @@ tcp_stream_flow()
     fi
     tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     
+    if [ $FLAG_I -eq 1 ]; then
+        if [ $ANALYSIS_LEVEL -le 1 ]; then
+            tshark_fields="$tshark_fields -e col.Protocol -e col.Info"
+        else
+            tshark_fields="$tshark_fields -e _ws.col.Protocol -e _ws.col.Info"
+        fi
+    fi
     if [ $FLAG_X -eq 1 ]; then
         tshark_fields="$tshark_fields -e tcp.payload"
     fi
@@ -1342,7 +1365,9 @@ tcp_stream_flow()
         if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
-        if [ $FLAG_X -eq 1 ]; then
+        if [ $FLAG_I -eq 1 ]; then
+            printf "======================="
+        elif [ $FLAG_X -eq 1 ]; then
             printf "=================================================================="
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
@@ -1390,7 +1415,9 @@ tcp_stream_flow()
         if [ $FLAG_Z -eq 1 ]; then
             printf "  Analysis"
         fi
-        if [ $FLAG_X -eq 1 ]; then
+        if [ $FLAG_I -eq 1 ]; then
+            printf "  Protocol  Information"
+        elif [ $FLAG_X -eq 1 ]; then
             printf "  Payload DATA                                                    "
         elif [ $FLAG_F -eq 1 ]; then
             printf "  Custom VALUE"
@@ -1415,7 +1442,9 @@ tcp_stream_flow()
         if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
-        if [ $FLAG_X -eq 1 ]; then
+        if [ $FLAG_I -eq 1 ]; then
+            printf "======================="
+        elif [ $FLAG_X -eq 1 ]; then
             printf "=================================================================="
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
@@ -1437,6 +1466,8 @@ tcp_stream_flow()
                      -v first_rtime="$first_rtime"       \
                      -v analysis="$FLAG_Z"               \
                      -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v protoinfo="$FLAG_I"              \
+                     -v protoinfo_length="$MAX_INFOLEN"  \
                      -v hexdump="$FLAG_X"                \
                      -v hexdump_length="$HEXDUMP_LENGTH" \
                      -v custom="$FLAG_F"                 \
@@ -1481,7 +1512,6 @@ tcp_stream_flow()
                 else if (time_type == 3) printf("                   ")
                 else                     printf("                 ")
                 #### TCP flow (WINDOW Size, Src/Dst PORT, LENGTH) ####
-                #rintf("                                                                 ")
                 printf("                       %s|                 |%s                       ", ACES_BOLD, ACES_END)
                 #### FLAGS ####
                 printf("        ")
@@ -1668,6 +1698,10 @@ tcp_stream_flow()
             key = analysis_keys[i]
             e_analysis[key] = $(29 + i)
         }
+        if (protoinfo) {
+            e_protocol    = $(29 + analysis_num)
+            e_information = $(30 + analysis_num)
+        }
         if (hexdump)
             e_payload = $(29 + analysis_num)
         if (custom) {
@@ -1847,7 +1881,17 @@ tcp_stream_flow()
             else if (cnt == 1) printf("     ");
             else if (cnt == 2) printf(" ");
         }
-        if (hexdump) {
+        if (protoinfo) {
+            #### Protocol Information ####
+            if (e_protocol != "TCP") {
+                printf("  %-8s", e_protocol)
+                protocol_information = e_information
+                if (protoinfo_length > 0 && length(e_information) > protoinfo_length)
+                    protocol_information = substr(e_information, 1, protoinfo_length) "..."
+                printf("  %s", protocol_information)
+            }
+        }
+        else if (hexdump) {
             gsub(":", "", e_payload)  # for wireshark 2.x
             dump_data(e_payload)
         }
@@ -2122,6 +2166,7 @@ GREP_COMMAND="grep"
 SED_COMMAND="sed"
 OUI_FILE=""
 MAX_STREAMS=$MAX_STREAMS_DEFAULT
+MAX_INFOLEN=$MAX_INFOLEN_DEFAULT
 APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
 
 FLAG_H=0
@@ -2138,6 +2183,7 @@ FLAG_S=0
 FLAG_T=0
 FLAG_P=0
 FLAG_A=0
+FLAG_I=0
 FLAG_X=0
 FLAG_F=0
 FLAG_F2=0
@@ -2214,7 +2260,7 @@ esac
 #==============================================================#
 # Gets options                                                 #
 #==============================================================#
-while getopts "HC46dvwqzhVr:s:n:t:p:a:x:f:e:" flag; do
+while getopts "HC46dvwqzihVr:s:n:t:p:a:x:f:e:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -2226,6 +2272,7 @@ while getopts "HC46dvwqzhVr:s:n:t:p:a:x:f:e:" flag; do
         w) FLAG_W=1;;
         q) FLAG_Q=1;;
         z) FLAG_Z=1;;
+        i) FLAG_I=1;;
         h) print_help;;
         V) print_version;;
         r) FLAG_R=1; TSHARK_INFILE="$OPTARG";;
@@ -2285,11 +2332,15 @@ if [ $FLAG_S -eq 1 ]; then
     if [ $FLAG_N -eq 1 ]; then
         usage
     fi
-    if [ $FLAG_X -eq 1 -a $FLAG_F -eq 1 ]; then
-        usage
+    if [ $FLAG_I -eq 1 ]; then
+        if [ $FLAG_X -eq 1 -o $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
+            usage
+        fi
     fi
-    if [ $FLAG_X -eq 1 -a $FLAG_E -eq 1 ]; then
-        usage
+    if [ $FLAG_X -eq 1 ]; then
+        if [ $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
+            usage
+        fi
     fi
     if [ $FLAG_F -eq 1 -a $FLAG_E -eq 1 ]; then
         usage
@@ -2299,7 +2350,7 @@ elif [ $FLAG_N -eq 1 ]; then
     if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
         usage
     fi
-    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
         usage
     fi
     if [ $FLAG_H -eq 1 -o $FLAG_T -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_F -eq 1 ]; then
@@ -2307,7 +2358,7 @@ elif [ $FLAG_N -eq 1 ]; then
     fi
 else
     #### list mode ####
-    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
         usage
     fi
     if [ $TIME_TYPE -eq 2 -o $TIME_TYPE -eq 3 -o $TIME_TYPE -eq 5 ]; then
@@ -2424,6 +2475,15 @@ if [ -n "$TCPSHARK_APPEARANCE" -a $FLAG_C -eq 0 ]; then
     esac
 fi
 
+if [ -n "$TCPSHARK_MAX_INFORMATION_LENGTH" ]; then
+    check_length $TCPSHARK_MAX_INFORMATION_LENGTH
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Invalid enviroment variable (TCPSHARK_MAX_INFORMATION_LENGTH).\n" 1>&2
+        exit 1
+    fi
+    MAX_INFOLEN=$TCPSHARK_MAX_INFORMATION_LENGTH
+fi
+
 #==============================================================#
 # Sets ANSI color escape sequences                             #
 #==============================================================#
@@ -2455,10 +2515,10 @@ esac
 #==============================================================#
 # Checks wireshark version                                     #
 #   1.0.0  - 1.7.*  : TcpShark not supported                   #
-#   1.8.0  - 1.11.* : ANAYSIS_LEVEL => 0                       #
-#   1.12.0 - 1.*.*  : ANAYSIS_LEVEL => 1                       #
-#   2.0.0  - 3.3.*  : ANAYSIS_LEVEL => 2                       #
-#   3.4.0  - *.*.*  : ANAYSIS_LEVEL => 3                       #
+#   1.8.0  - 1.11.* : ANALYSIS_LEVEL => 0                      #
+#   1.12.0 - 1.*.*  : ANALYSIS_LEVEL => 1                      #
+#   2.0.0  - 3.3.*  : ANALYSIS_LEVEL => 2                      #
+#   3.4.0  - *.*.*  : ANALYSIS_LEVEL => 3                      #
 #==============================================================#
 version=`get_version`
 case "$version" in
