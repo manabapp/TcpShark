@@ -1295,7 +1295,7 @@ tcp_stream_flow()
     tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     
     if [ $FLAG_I -eq 1 ]; then
-        if [ $ANAYSIS_LEVEL -le 1 ]; then
+        if [ $ANALYSIS_LEVEL -le 1 ]; then
             tshark_fields="$tshark_fields -e col.Protocol -e col.Info"
         else
             tshark_fields="$tshark_fields -e _ws.col.Protocol -e _ws.col.Info"
@@ -2515,10 +2515,10 @@ esac
 #==============================================================#
 # Checks wireshark version                                     #
 #   1.0.0  - 1.7.*  : TcpShark not supported                   #
-#   1.8.0  - 1.11.* : ANAYSIS_LEVEL => 0                       #
-#   1.12.0 - 1.*.*  : ANAYSIS_LEVEL => 1                       #
-#   2.0.0  - 3.3.*  : ANAYSIS_LEVEL => 2                       #
-#   3.4.0  - *.*.*  : ANAYSIS_LEVEL => 3                       #
+#   1.8.0  - 1.11.* : ANALYSIS_LEVEL => 0                      #
+#   1.12.0 - 1.*.*  : ANALYSIS_LEVEL => 1                      #
+#   2.0.0  - 3.3.*  : ANALYSIS_LEVEL => 2                      #
+#   3.4.0  - *.*.*  : ANALYSIS_LEVEL => 3                      #
 #==============================================================#
 version=`get_version`
 case "$version" in
