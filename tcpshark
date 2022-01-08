@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.4.5"                                                #
+VERSION="2.4.6"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -487,9 +487,9 @@ get_vendor()
     vendor_name="Unknown"
     mac_oui=`echo "$1" | cut -c1-8`
     if [ -r "$OUI_FILE" -a -n "$mac_oui" ]; then
-        name=`"$GREP_COMMAND" -i ^$mac_oui "$OUI_FILE" | head -1 | "$AWK_COMMAND" '{ printf($2) }'`
+        name=`"$GREP_COMMAND" -i ^$mac_oui "$OUI_FILE" | head -1 | cut -f 2 | "$SED_COMMAND" 's/\r$//'`
         if [ -n "$name" ]; then
-            vendor_name=$name
+            vendor_name="$name"
         fi
     fi
     printf "$vendor_name"
@@ -2119,6 +2119,7 @@ PRE_COMMAND=""
 TSHARK_COMMAND="tshark"
 AWK_COMMAND="awk"
 GREP_COMMAND="grep"
+SED_COMMAND="sed"
 OUI_FILE=""
 MAX_STREAMS=$MAX_STREAMS_DEFAULT
 APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
