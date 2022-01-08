@@ -668,7 +668,7 @@ tcp_stream_list()
             for key in $analysis_header ; do
                 str="${str}====="
             done
-            printf $str
+            printf "$str"
         elif [ $FLAG_F -eq 1 ]; then
             printf "======================================================================================"
         else
@@ -690,13 +690,14 @@ tcp_stream_list()
         printf "                "
         printf "             "
         if [ $FLAG_Z -eq 1 ]; then
+            str=" | Analysis"
             i=`echo $analysis_header | wc -w`
-            printf " | Analysis"
             while [ $i -gt 2 ]; do
-                printf "     "
+                str="${str}     "
                 i=`expr $i - 1`
             done
-            printf " |"
+            str="${str} |"
+            printf "$str"
         elif [ $FLAG_F -eq 1 ]; then
             printf " | Custom STATISTICS           ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}                             |"
         else
@@ -734,7 +735,7 @@ tcp_stream_list()
             for key in $analysis_header ; do
                 str="${str}====="
             done
-            printf $str
+            printf "$str"
         elif [ $FLAG_F -eq 1 ]; then
             printf "======================================================================================"
         else
@@ -1510,7 +1511,6 @@ tcp_stream_flow()
                 else if (time_type == 3) printf("                   ")
                 else                     printf("                 ")
                 #### TCP flow (WINDOW Size, Src/Dst PORT, LENGTH) ####
-                #rintf("                                                                 ")
                 printf("                       %s|                 |%s                       ", ACES_BOLD, ACES_END)
                 #### FLAGS ####
                 printf("        ")
