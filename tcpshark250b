@@ -664,11 +664,10 @@ tcp_stream_list()
         printf "================"
         printf "============="
         if [ $FLAG_Z -eq 1 ]; then
-            str="==="
+            printf "==="
             for key in $analysis_header ; do
-                str="${str}====="
+                printf "====="
             done
-            printf "$str"
         elif [ $FLAG_F -eq 1 ]; then
             printf "======================================================================================"
         else
@@ -690,14 +689,13 @@ tcp_stream_list()
         printf "                "
         printf "             "
         if [ $FLAG_Z -eq 1 ]; then
-            str=" | Analysis"
             i=`echo $analysis_header | wc -w`
+            printf " | Analysis"
             while [ $i -gt 2 ]; do
-                str="${str}     "
+                printf "     "
                 i=`expr $i - 1`
             done
-            str="${str} |"
-            printf "$str"
+            printf " |"
         elif [ $FLAG_F -eq 1 ]; then
             printf " | Custom STATISTICS           ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}                             |"
         else
@@ -731,11 +729,10 @@ tcp_stream_list()
         printf "================"
         printf "============="
         if [ $FLAG_Z -eq 1 ]; then
-            str="==="
+            printf "==="
             for key in $analysis_header ; do
-                str="${str}====="
+                printf "====="
             done
-            printf "$str"
         elif [ $FLAG_F -eq 1 ]; then
             printf "======================================================================================"
         else
