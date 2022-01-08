@@ -1295,7 +1295,11 @@ tcp_stream_flow()
     tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     
     if [ $FLAG_I -eq 1 ]; then
-        tshark_fields="$tshark_fields -e _ws.col.Protocol -e _ws.col.Info"
+        if [ $ANAYSIS_LEVEL -le 1 ]; then
+            tshark_fields="$tshark_fields -e col.Protocol -e col.Info"
+        else
+            tshark_fields="$tshark_fields -e _ws.col.Protocol -e _ws.col.Info"
+        fi
     fi
     if [ $FLAG_X -eq 1 ]; then
         tshark_fields="$tshark_fields -e tcp.payload"
