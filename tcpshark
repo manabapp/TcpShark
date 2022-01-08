@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.4.4"                                                #
+VERSION="2.4.5"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -729,7 +729,7 @@ tcp_stream_list()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
                      -v descending="$FLAG_D"             \
@@ -1431,7 +1431,7 @@ tcp_stream_flow()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
                      -v first_rtime="$first_rtime"       \
@@ -1905,7 +1905,7 @@ tcp_stream_one()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE" \
                      -v appearance="$APPEARANCE" '
     BEGIN {
