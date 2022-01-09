@@ -1170,7 +1170,7 @@ tcp_stream_flow()
     -e ipv6.dst \
     -e eth.src \
     -e eth.dst"
-    if [ $ANALYSIS_LEVEL -ge 1 ]; then
+    if [ $DISPLAY_VENDOR -eq 1 ]; then
         tshark_fields="$tshark_fields -e eth.src.oui_resolved -e eth.dst.oui_resolved"
     fi
     tshark_fields="$tshark_fields -e tcp.stream"  # dummy field for Cygwin
@@ -1192,7 +1192,7 @@ tcp_stream_flow()
     dstaddr6=`get_value "$line" 7`
     srcmac=`echo "$line" | cut -f 8`
     dstmac=`echo "$line" | cut -f 9`
-    if [ $ANALYSIS_LEVEL -ge 1 ]; then
+    if [ $DISPLAY_VENDOR -eq 1 ]; then
         srcvendor=`echo "$line" | cut -f 10`
         dstvendor=`echo "$line" | cut -f 11`
     fi
@@ -1202,7 +1202,7 @@ tcp_stream_flow()
         save="$srcaddr";  srcaddr="$dstaddr";   dstaddr="$save"
         save="$srcaddr6"; srcaddr6="$dstaddr6"; dstaddr6="$save"
         save="$srcmac";   srcmac="$dstmac";     dstmac="$save"
-        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+        if [ $DISPLAY_VENDOR -eq 1 ]; then
             save="$srcvendor"; srcvendor="$dstvendor"; dstvendor="$save"
         fi
     fi
@@ -1380,7 +1380,7 @@ tcp_stream_flow()
             printf "Stream: ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} <----> ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
         fi
         if [ -n "$srcmac" -a -n "$dstmac" ]; then
-            if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            if [ $DISPLAY_VENDOR -eq 1 ]; then
                 if [ -z "$srcvendor" ]; then
                     srcvendor="Unknown"
                 fi
@@ -2183,6 +2183,7 @@ FLAG_N=0
 
 HEXDUMP_LENGTH=0
 ANALYSIS_LEVEL=0
+DISPLAY_VENDOR=0
 EXPERT_TYPE=0
 TSHARK_INFILE=""
 TSHARK_OPTIONS=""
@@ -2495,6 +2496,12 @@ case "$version" in
     *)              printf "ERROR: Wireshark version too old (${version}).\n" 1>&2; exit 1;;
 esac
 
+if [ $FLAG_X -eq 1 ]; then
+    check_field eth.dst.oui_resolved
+    if [ $? -ne 0 ]; then
+        DISPLAY_VENDOR=1
+    fi
+fi
 if [ $FLAG_X -eq 1 ]; then
     check_field tcp.payload
     if [ $? -ne 0 ]; then
