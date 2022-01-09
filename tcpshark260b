@@ -2496,9 +2496,9 @@ case "$version" in
     *)              printf "ERROR: Wireshark version too old (${version}).\n" 1>&2; exit 1;;
 esac
 
-if [ $FLAG_X -eq 1 ]; then
+if [ $FLAG_S -eq 1 ]; then
     check_field eth.dst.oui_resolved
-    if [ $? -ne 0 ]; then
+    if [ $? -eq 0 ]; then
         DISPLAY_VENDOR=1
     fi
 fi
