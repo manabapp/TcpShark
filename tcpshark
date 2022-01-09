@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.6.0"                                                #
+VERSION="2.7.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -1169,7 +1169,8 @@ tcp_stream_flow()
     -e ipv6.src \
     -e ipv6.dst \
     -e eth.src \
-    -e eth.dst"
+    -e eth.dst \
+    -e vlan.id"
     if [ $DISPLAY_VENDOR -eq 1 ]; then
         tshark_fields="$tshark_fields -e eth.src.oui_resolved -e eth.dst.oui_resolved"
     fi
@@ -1192,9 +1193,10 @@ tcp_stream_flow()
     dstaddr6=`get_value "$line" 7`
     srcmac=`echo "$line" | cut -f 8`
     dstmac=`echo "$line" | cut -f 9`
+    vlanid=`echo "$line" | cut -f 10`
     if [ $DISPLAY_VENDOR -eq 1 ]; then
-        srcvendor=`echo "$line" | cut -f 10`
-        dstvendor=`echo "$line" | cut -f 11`
+        srcvendor=`echo "$line" | cut -f 11`
+        dstvendor=`echo "$line" | cut -f 12`
     fi
     
     if [ $FLAG_V -eq 1 ]; then
@@ -1387,10 +1389,14 @@ tcp_stream_flow()
                 if [ -z "$dstvendor" ]; then
                     dstvendor="Unknown"
                 fi
-                printf "        ${ACES_GRAY}${srcmac}(${srcvendor}), ${dstmac}(${dstvendor})${ACES_END}\n"
+                printf "        ${ACES_GRAY}${srcmac}(${srcvendor}), ${dstmac}(${dstvendor})${ACES_END}"
             else
-                printf "        ${ACES_GRAY}${srcmac}, ${dstmac}${ACES_END}\n"
+                printf "        ${ACES_GRAY}${srcmac}, ${dstmac}${ACES_END}"
             fi
+            if [ -n "$vlanid" ]; then
+                printf "  [vlan: ${ACES_BOLD}${vlanid}${ACES_END}]"
+            fi
+            printf "\n"
         fi
         printf "\n"
         printf "     No."
