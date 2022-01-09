@@ -520,7 +520,7 @@ tcp_stream_list()
     custom_column=0
     custom_ftype=0
     analysis_header=""
-    analysis_num=0
+    space_num=0
     
     #==============================================#
     # Finds any stream                             #
@@ -646,12 +646,16 @@ tcp_stream_list()
     #==============================================#
     if [ $ANALYSIS_LEVEL -eq 0 ]; then
         analysis_header="ret  fst  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
+        space_num=12
     elif [ $ANALYSIS_LEVEL -eq 1 ]; then
         analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
+        space_num=13
     elif [ $ANALYSIS_LEVEL -eq 2 ]; then
         analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  prt"
+        space_num=14
     else
         analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  afo  ifo  prt"
+        space_num=16
     fi
     if [ $FLAG_H -ne 1 ]; then
         printf "====="
@@ -689,12 +693,9 @@ tcp_stream_list()
         printf "                "
         printf "             "
         if [ $FLAG_Z -eq 1 ]; then
-            num=`echo $analysis_header | wc -w`
             printf " | Analysis"
-            i=2
-            while [ $i -lt $num ]; do
+            for i in `seq $space_num`; do
                 printf "     "
-                i=`expr $i + 1`
             done
             printf " |"
         elif [ $FLAG_F -eq 1 ]; then
