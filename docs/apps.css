@@ -21,6 +21,6 @@ th{text-align:center; font-size:14px;}
 .changelog{background-color: #8e8e93; color: white; padding: 5px 10px; white-space: nowrap; text-align: left}
 .changelog0{background-color: #ceced3; color: black; padding: 5px 10px; text-align: left;}
 .changelog1{background-color: #bebec3; color: black; padding: 5px 10px; text-align: left;}
-.changelog02{background-color: #ceced3; color: #8e8e93; font-size: 12px; font-weight: lighter; padding: 0px 10px 5px; text-align: left;}
-.changelog12{background-color: #bebec3; color: #6e6e73; font-size: 12px; font-weight: lighter; padding: 0px 10px 5px; text-align: left;}
+.changelog0md{background-color: #ceced3; color: #8e8e93; font-size: 12px; font-weight: lighter; padding: 0px 10px 5px; white-space: nowrap; text-align: left;}
+.changelog1md{background-color: #bebec3; color: #6e6e73; font-size: 12px; font-weight: lighter; padding: 0px 10px 5px; white-space: nowrap; text-align: left;}
 
