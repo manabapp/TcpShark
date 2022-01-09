@@ -10,7 +10,7 @@
 ### flow mode
 
     tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
-                         [-z] [-x <length> | -f <field> | -e rtt|rto|dup]
+                         [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]
 
 ### one mode
 
@@ -94,9 +94,13 @@ In default, absolute numbers.
 TCP analysis information is displayed.  
 In detail, see "**OUTPUT FORMAT**".
 
+- `-i`  
+Information for upper layer protocol is displayed.
+
 - `-x <length>`  
 TCP segment data up to the specified bytes is output by hexadecimal  
-dump. If length is 0, all data is displayed.  
+dump. **(Wireshark 2.4.0 or newer)**  
+If length is 0, all data is displayed.  
 NOTE: this data is TCP payload data, so it does not include TCP, IP,  
 and Ethernet headers.  
 
@@ -127,6 +131,10 @@ Streams or packets are output in the following format:
 
 ### list mode
 
+      Filter             Display filter used by Wireshark.
+      
+      CField             Custom field for statistics information.
+      
       Index              Stream index.
       
       TIME               Timestamp in first packet.
@@ -182,6 +190,17 @@ Streams or packets are output in the following format:
 
 ### flow mode
 
+      Filter             Display filter used by Wireshark.
+      
+      CField             Custom field(s).
+      
+      Stream             Pair of IP address and TCP port.
+                         MAC addresses are displayed if Ethernet. Additionally,
+                         vlan id is displayed if IEEE 802.1Q.
+      
+                         If known vendor, vendor name for oui is displayed.
+                         (Wireshark 3.2.0 or newer)
+      
       No.                Packet number in capture file.
       
       TIME               Timestamp in each packet.
@@ -221,6 +240,11 @@ Streams or packets are output in the following format:
                            [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
                            [O] OTHER(kind:XXX)     : TCP option's kind
       
+      Protocol           Upper layer protocol over TCP/IP.
+      
+      Information        Information for upper layer protocol.
+                         Same contents as Wireshark 'Info' field is displayed.
+      
       Payload DATA       Hexadecimal dump and printable ascii string of TCP
                          segment data.
       
@@ -241,11 +265,11 @@ Output of the following command is displayed as is.
 # ENVIRONMENT VARIABLES
 |Variable|Description|
 |:--|:--|
-|TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If the command is not found on your lab, set the full path of tshark.|
-|TCPSHARK_WIRESHARK_OUIFILE|File path of OUI (Organizationally Unique Identifier) list included in<br>Wireshark.<br>If this file is not found on your lab, set the full path of the file.<br>Default path is as follows:<br>&nbsp;&nbsp;&nbsp;`/usr/share/wireshark/manuf` (**Linux**, **Solaris**)<br>&nbsp;&nbsp;&nbsp;`/Applications/Wireshark.app/Contents/Resources/share/wireshark/manuf` (**macOS**)<br>&nbsp;&nbsp;&nbsp;Path of 'manuf' file under the folder installed Wireshark (**Windows**)|
+|TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If command not found on your system, set the full path of the command.|
 |TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the<br>user specified in this variable.<br>(**Linux, Solaris use only**)|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of<br>streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
 |TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or<br>`Light`. Default is `Dark`.<br>If your terminal's background is whitish color, set `Light`.|
+|TCPSHARK_MAX_INFORMATION_LENGTH|Maximum length of protocol information in flow mode.<br>If an information is longer than this length, the information is<br>truncated to this length.<br>Default length is 48. If 0, not truncated.|
 
 # EXIT STATUS
 This utility exits 0 on success, or 1 if error.
