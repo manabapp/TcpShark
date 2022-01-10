@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.7.2"                                                #
+VERSION="2.7.3"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -1952,7 +1952,7 @@ tcp_stream_one()
     #==============================================#
     # Executes tshark                              #
     #==============================================#
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -c $FRAME_NUMBER -V $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE" \
                      -v appearance="$APPEARANCE" '
     BEGIN {
