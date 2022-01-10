@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.7.1"                                                #
+VERSION="2.7.2"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -492,6 +492,7 @@ tcp_stream_list()
     #==============================================#
     # Finds any stream                             #
     #==============================================#
+    printf "Searching file...\r" 1>&2
     line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1`
     if [ $? -ne 0 ]; then
         return 1
@@ -713,7 +714,7 @@ tcp_stream_list()
     #==============================================#
     # Executes tshark                              #
     #==============================================#
-    printf "Now analyzing...\r" 1>&2
+    printf "Now analyzing... \r" 1>&2
     $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
@@ -1155,6 +1156,7 @@ tcp_stream_flow()
     #==============================================#
     # Finds the stream                             #
     #==============================================#
+    printf "Finding stream...\r" 1>&2
     tshark_fields="-e frame.time_relative \
     -e tcp.srcport \
     -e tcp.dstport \
@@ -1452,7 +1454,7 @@ tcp_stream_flow()
     #==============================================#
     # Executes tshark                              #
     #==============================================#
-    printf "Now analyzing...\r" 1>&2
+    printf "Now analyzing... \r" 1>&2
     $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
@@ -1941,6 +1943,7 @@ tcp_stream_one()
     #==============================================#
     # Dummy search to check frame number           #
     #==============================================#
+    printf "Finding packet...\r" 1>&2
     $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 > /dev/null
     if [ $? -ne 0 ]; then
         return 1
@@ -1949,7 +1952,6 @@ tcp_stream_one()
     #==============================================#
     # Executes tshark                              #
     #==============================================#
-    printf "Now analyzing...\r" 1>&2
     $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -V $TSHARK_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE" \
                      -v appearance="$APPEARANCE" '
