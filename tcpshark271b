@@ -1939,7 +1939,7 @@ tcp_stream_one()
     tshark_filter="frame.number == $FRAME_NUMBER"
     
     #==============================================#
-    # Dummy search due to check number             #
+    # Dummy search to check frame number           #
     #==============================================#
     $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 > /dev/null
     if [ $? -ne 0 ]; then
