@@ -15,6 +15,7 @@ MAX_STREAMS_DEFAULT=262144
 MAX_STREAMS_LIMIT=1048576
 MAX_INFOLEN_DEFAULT=48
 MAX_LENGTH_LIMIT=65536
+APPEARANCE_DEFAULT=1   # Dark
 
 #==============================================================#
 # Function: Prints usage                                       #
@@ -159,9 +160,8 @@ fi
     echo "    -x <length>"
     echo "          TCP segment data up to the specified bytes is output by hexadecimal"
     echo "          dump. (Wireshark 2.4.0 or newer)"
-    echo "          If length is 0, all data is displayed."
-    echo "          NOTE: this data is TCP payload data, so it does not include TCP, IP,"
-    echo "          and Ethernet headers."
+    echo "          Upper limit is ${MAX_LENGTH_LIMIT}. If length is 0, all data is displayed."
+    echo "          NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet."
     echo ""
     echo "    -f <field>"
     echo "          Specified field is displayed."
@@ -350,7 +350,7 @@ fi
     echo "          Maximum length of protocol information in flow mode."
     echo "          If an information is longer than this length, the information is"
     echo "          truncated to this length."
-    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. If 0, not truncated."
+    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. Upper limit is ${MAX_LENGTH_LIMIT}. If 0, not truncated."
     echo ""
     echo "EXIT STATUS"
     echo "    This utility exits 0 on success, or 1 if error."
@@ -363,27 +363,12 @@ fi
 #==============================================================#
 # Function: Checks if an integer in the range                  #
 #==============================================================#
-check_stream_limit()
+check_streams()
 {
     number=$1
     expr "$number" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
         if [ $number -ge 1 -a $number -le $MAX_STREAMS_LIMIT ]; then
-            return 0
-        fi
-    fi
-    return 1
-}
-
-#==============================================================#
-# Function: Checks if an integer greater than 1                #
-#==============================================================#
-check_frame_number()
-{
-    number=$1
-    expr "$number" + 1 > /dev/null 2>&1
-    if [ $? -lt 2 ] ; then
-        if [ $number -ge 1 ]; then
             return 0
         fi
     fi
@@ -1954,6 +1939,14 @@ tcp_stream_one()
     tshark_filter="frame.number == $FRAME_NUMBER"
     
     #==============================================#
+    # Dummy search due to check number             #
+    #==============================================#
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 > /dev/null
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    #==============================================#
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
@@ -2173,7 +2166,7 @@ AWK_COMMAND="awk"
 GREP_COMMAND="grep"
 MAX_STREAMS=$MAX_STREAMS_DEFAULT
 MAX_INFOLEN=$MAX_INFOLEN_DEFAULT
-APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
+APPEARANCE=$APPEARANCE_DEFAULT   # 0:Colorless, 1:Dark(default), 2:Light
 
 FLAG_H=0
 FLAG_C=0
@@ -2385,14 +2378,6 @@ if [ $FLAG_D -eq 1 -a $OS_TYPE -ne 0 ]; then
     usage
 fi
 
-### Checks a frame number before running tshark, but does not check a stream index.
-if [ $FLAG_N -eq 1 ]; then
-    check_frame_number $FRAME_NUMBER
-    if [ $? -ne 0 ]; then
-        printf "ERROR: Invalid frame number (${FRAME_NUMBER}).\n" 1>&2
-        exit 1
-    fi
-fi
 if [ $FLAG_X -eq 1 ]; then
     check_length $HEXDUMP_LENGTH
     if [ $? -ne 0 ]; then
@@ -2431,7 +2416,7 @@ if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
 fi
 
 if [ -n "$TCPSHARK_MAX_STREAMS" ]; then
-    check_stream_limit $TCPSHARK_MAX_STREAMS
+    check_streams $TCPSHARK_MAX_STREAMS
     if [ $? -ne 0 ]; then
         printf "ERROR: Invalid enviroment variable (TCPSHARK_MAX_STREAMS).\n" 1>&2
         exit 1
