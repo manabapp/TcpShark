@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.7.0"                                                #
+VERSION="2.7.1"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -15,6 +15,7 @@ MAX_STREAMS_DEFAULT=262144
 MAX_STREAMS_LIMIT=1048576
 MAX_INFOLEN_DEFAULT=48
 MAX_LENGTH_LIMIT=65536
+APPEARANCE_DEFAULT=1   # Dark
 
 #==============================================================#
 # Function: Prints usage                                       #
@@ -158,9 +159,9 @@ fi
     echo ""
     echo "    -x <length>"
     echo "          TCP segment data up to the specified bytes is output by hexadecimal"
-    echo "          dump. If length is 0, all data is displayed."
-    echo "          NOTE: this data is TCP payload data, so it does not include TCP, IP,"
-    echo "          and Ethernet headers."
+    echo "          dump. (Wireshark 2.4.0 or newer)"
+    echo "          Upper limit is ${MAX_LENGTH_LIMIT}. If length is 0, all data is displayed."
+    echo "          NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet."
     echo ""
     echo "    -f <field>"
     echo "          Specified field is displayed."
@@ -189,6 +190,10 @@ fi
     echo "    Streams or packets are output in the following format:"
     echo ""
     echo "    <list mode>"
+    echo "      Filter             Display filter used by Wireshark."
+    echo ""
+    echo "      CField             Custom field for statistics information."
+    echo ""
     echo "      Index              Stream index."
     echo ""
     echo "      TIME               Timestamp in first packet."
@@ -243,6 +248,17 @@ fi
     echo "                           prt : TCP Port numbers reused"
     echo ""
     echo "    <flow mode>"
+    echo "      Filter             Display filter used by Wireshark."
+    echo ""
+    echo "      CField             Custom field(s)."
+    echo ""
+    echo "      Stream             Pair of IP address and TCP port."
+    echo "                         MAC addresses are displayed if Ethernet. Additionally,"
+    echo "                         vlan id is displayed if IEEE 802.1Q."
+    echo ""
+    echo "                         If known vendor, vendor name for oui is displayed."
+    echo "                         (Wireshark 3.2.0 or newer)"
+    echo ""
     echo "      No.                Packet number in capture file."
     echo ""
     echo "      TIME               Timestamp in each packet."
@@ -308,8 +324,7 @@ fi
     echo "ENVIRONMENT VARIABLES"
     echo "    TCPSHARK_TSHARK_COMMAND"
     echo "          File path of executable command 'tshark'."
-    echo "          If the command is not found on your system, set the full path of"
-    echo "          tshark."
+    echo "          If command not found on your system, set the full path of the command."
     echo ""
 if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
     echo "    TCPSHARK_EXECUTION_USER"
@@ -335,7 +350,7 @@ fi
     echo "          Maximum length of protocol information in flow mode."
     echo "          If an information is longer than this length, the information is"
     echo "          truncated to this length."
-    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. If 0, not truncated."
+    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. Upper limit is ${MAX_LENGTH_LIMIT}. If 0, not truncated."
     echo ""
     echo "EXIT STATUS"
     echo "    This utility exits 0 on success, or 1 if error."
@@ -346,20 +361,14 @@ fi
 }
 
 #==============================================================#
-# Function: Checks if an integer in the range for stream index #
+# Function: Checks if an integer in the range                  #
 #==============================================================#
-check_number()
+check_streams()
 {
     number=$1
-    if [ -z "$number" ]; then
-        return 1
-    fi
-    if [ ${#number} -gt 7 ]; then
-        return 1
-    fi
     expr "$number" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
-        if [ $number -ge 0 -a $number -le $MAX_STREAMS_LIMIT ]; then
+        if [ $number -ge 1 -a $number -le $MAX_STREAMS_LIMIT ]; then
             return 0
         fi
     fi
@@ -372,12 +381,6 @@ check_number()
 check_length()
 {
     length=$1
-    if [ -z "$length" ]; then
-        return 1
-    fi
-    if [ ${#length} -gt 5 ]; then
-        return 1
-    fi
     expr "$length" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
         if [ $length -ge 0 -a $length -le $MAX_LENGTH_LIMIT ]; then
@@ -393,15 +396,6 @@ check_length()
 check_field()
 {
     $PRE_COMMAND "$TSHARK_COMMAND" -G fields | cut -f 3 | "$GREP_COMMAND" -Fx "$1" > /dev/null 2>&1
-    return $?
-}
-
-#==============================================================#
-# Function: Checks if the path is absolute                     #
-#==============================================================#
-check_absolute()
-{
-    echo "$1" | "$GREP_COMMAND" ^/ > /dev/null 2>&1
     return $?
 }
 
@@ -1945,6 +1939,14 @@ tcp_stream_one()
     tshark_filter="frame.number == $FRAME_NUMBER"
     
     #==============================================#
+    # Dummy search to check frame number           #
+    #==============================================#
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 > /dev/null
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    #==============================================#
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing...\r" 1>&2
@@ -2164,7 +2166,7 @@ AWK_COMMAND="awk"
 GREP_COMMAND="grep"
 MAX_STREAMS=$MAX_STREAMS_DEFAULT
 MAX_INFOLEN=$MAX_INFOLEN_DEFAULT
-APPEARANCE=1   # 0:Colorless, 1:Dark(default), 2:Light
+APPEARANCE=$APPEARANCE_DEFAULT   # 0:Colorless, 1:Dark(default), 2:Light
 
 FLAG_H=0
 FLAG_C=0
@@ -2376,13 +2378,6 @@ if [ $FLAG_D -eq 1 -a $OS_TYPE -ne 0 ]; then
     usage
 fi
 
-if [ $FLAG_S -eq 1 ]; then
-    check_number $STREAM_INDEX
-    if [ $? -ne 0 ]; then
-        printf "ERROR: Invalid stream index (${STREAM_INDEX}).\n" 1>&2
-        exit 1
-    fi
-fi
 if [ $FLAG_X -eq 1 ]; then
     check_length $HEXDUMP_LENGTH
     if [ $? -ne 0 ]; then
@@ -2421,7 +2416,7 @@ if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
 fi
 
 if [ -n "$TCPSHARK_MAX_STREAMS" ]; then
-    check_number $TCPSHARK_MAX_STREAMS
+    check_streams $TCPSHARK_MAX_STREAMS
     if [ $? -ne 0 ]; then
         printf "ERROR: Invalid enviroment variable (TCPSHARK_MAX_STREAMS).\n" 1>&2
         exit 1
