@@ -100,9 +100,8 @@ Information for upper layer protocol is displayed.
 - `-x <length>`  
 TCP segment data up to the specified bytes is output by hexadecimal  
 dump. **(Wireshark 2.4.0 or newer)**  
-If length is 0, all data is displayed.  
-NOTE: this data is TCP payload data, so it does not include TCP, IP,  
-and Ethernet headers.  
+Upper limit is 65536. If length is 0, all data is displayed.  
+NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet.  
 
 - `-f <field>`  
 Specified field is displayed.  
@@ -269,7 +268,7 @@ Output of the following command is displayed as is.
 |TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the<br>user specified in this variable.<br>(**Linux, Solaris use only**)|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of<br>streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
 |TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or<br>`Light`. Default is `Dark`.<br>If your terminal's background is whitish color, set `Light`.|
-|TCPSHARK_MAX_INFORMATION_LENGTH|Maximum length of protocol information in flow mode.<br>If an information is longer than this length, the information is<br>truncated to this length.<br>Default length is 48. If 0, not truncated.|
+|TCPSHARK_MAX_INFORMATION_LENGTH|Maximum length of protocol information in flow mode.<br>If an information is longer than this length, the information is<br>truncated to this length.<br>Default length is 48. Upper limit is 65536. If 0, not truncated.|
 
 # EXIT STATUS
 This utility exits 0 on success, or 1 if error.
