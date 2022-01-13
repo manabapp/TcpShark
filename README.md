@@ -306,8 +306,8 @@ FYR, operation has been confirmed on the following platforms:
 1. Places the script file `tcpshark` in **&lt;Cygwin install folder&gt;\usr\local\bin** directory.  
   (e.g. **c:\cygwin\usr\local\bin**)
 2. Sets an environment variable in .bash_profile on Cygwin.  
-  `PATH=<Wireshark install folder>:${PATH}`  
-  (e.g. `PATH="/cygdrive/c/Program Files/Wireshark:${PATH}"`)
+  `export TCPSHARK_TSHARK_COMMAND=<Wireshark install folder>/tshark.exe`  
+  (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 3. **(Optional)** Sets an environment variable in .bash_profile on Cygwin, if your terminal background color is white.  
   `TCPSHARK_APPEARANCE=Light`
 
