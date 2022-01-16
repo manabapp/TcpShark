@@ -2583,15 +2583,16 @@ TSHARK_FIND_OPTIONS="-o nameres.dns_pkt_addr_resolution:FALSE    \
                      -o tcp.track_bytes_in_flight:FALSE          \
                      -o tcp.calculate_timestamps:FALSE"
 if [ $FLAG_N -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="-o nameres.dns_pkt_addr_resolution:TRUE    \
-                         -o nameres.use_external_name_resolver:TRUE \
-                         -o ip.use_geoip:TRUE                       \
-                         -o tcp.calculate_timestamps:TRUE"
+    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE -o tcp.calculate_timestamps:TRUE"
 else
-    TSHARK_MAIN_OPTIONS="-o nameres.dns_pkt_addr_resolution:FALSE    \
-                         -o nameres.use_external_name_resolver:FALSE \
-                         -o ip.use_geoip:FALSE                       \
-                         -o tcp.calculate_timestamps:FALSE"
+    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:FALSE -o tcp.calculate_timestamps:FALSE"
+fi
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    if [ $FLAG_N -eq 1 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:TRUE -o ip.use_geoip:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
+    fi
 fi
 if [ $TIME_TYPE -eq 3 -o $FLAG_N -eq 1 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
