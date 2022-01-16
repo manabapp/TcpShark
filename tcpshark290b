@@ -2574,14 +2574,16 @@ fi
 #==============================================================#
 # Builds tshark's option parameter                             #
 #==============================================================#
-TSHARK_FIND_OPTIONS="-o nameres.dns_pkt_addr_resolution:FALSE    \
-                     -o nameres.use_external_name_resolver:FALSE \
+TSHARK_FIND_OPTIONS="-o nameres.use_external_name_resolver:FALSE \
                      -o frame.generate_epoch_time:FALSE          \
-                     -o ip.use_geoip:FALSE                       \
                      -o tcp.analyze_sequence_numbers:FALSE       \
                      -o tcp.relative_sequence_numbers:FALSE      \
                      -o tcp.track_bytes_in_flight:FALSE          \
                      -o tcp.calculate_timestamps:FALSE"
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
+fi
+
 if [ $FLAG_N -eq 1 ]; then
     TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE -o tcp.calculate_timestamps:TRUE"
 else
@@ -2605,6 +2607,7 @@ if [ $? -eq 0 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 -o $FLAG_N -eq 
 else
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE -o tcp.relative_sequence_numbers:FALSE -o tcp.track_bytes_in_flight:FALSE"
 fi
+
 if [ $FLAG_B -eq 1 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_FIND_OPTIONS"
 fi
