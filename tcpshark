@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.7.4"                                                #
+VERSION="2.7.5"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -2546,6 +2546,9 @@ if [ $FLAG_Q -eq 1 ]; then
     TSHARK_OPTIONS="$TSHARK_OPTIONS -o tcp.relative_sequence_numbers:TRUE"
 else
     TSHARK_OPTIONS="$TSHARK_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+fi
+if [ $FLAG_N -eq 1 ]; then
+    TSHARK_OPTIONS="$TSHARK_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
 fi
 
 #==============================================================#
