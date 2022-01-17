@@ -403,19 +403,6 @@ check_field()
 }
 
 #==============================================================#
-# Function: Checks if the tcp's field                          #
-#==============================================================#
-has_tcp_field()
-{
-    echo "$CUSTOM_FIELD" | "$GREP_COMMAND" "^tcp\." > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        return $?
-    fi
-    echo "$CUSTOM_FIELD2" | "$GREP_COMMAND" "^tcp\." > /dev/null 2>&1
-    return $?
-}
-
-#==============================================================#
 # Function: Returns wireshark version                          #
 #==============================================================#
 get_version()
@@ -2576,40 +2563,82 @@ fi
 #==============================================================#
 TSHARK_FIND_OPTIONS="-o nameres.use_external_name_resolver:FALSE \
                      -o frame.generate_epoch_time:FALSE          \
+                     -o tcp.check_checksum:FALSE                 \
+                     -o tcp.desegment_tcp_streams:FALSE          \
                      -o tcp.analyze_sequence_numbers:FALSE       \
                      -o tcp.relative_sequence_numbers:FALSE      \
                      -o tcp.track_bytes_in_flight:FALSE          \
-                     -o tcp.calculate_timestamps:FALSE"
+                     -o tcp.calculate_timestamps:FALSE           \
+                     -o tcp.try_heuristic_first:FALSE            \
+                     -o tcp.ignore_tcp_timestamps:TRUE           \
+                     -o tcp.no_subdissector_on_error:TRUE        \
+                     -o tcp.dissect_experimental_options_with_magic:FALSE"
 if [ $ANALYSIS_LEVEL -ge 2 ]; then
     TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
 fi
 
 if [ $FLAG_N -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE -o tcp.calculate_timestamps:TRUE"
-else
-    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:FALSE -o tcp.calculate_timestamps:FALSE"
-fi
-if [ $ANALYSIS_LEVEL -ge 2 ]; then
-    if [ $FLAG_N -eq 1 ]; then
-        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:TRUE -o ip.use_geoip:TRUE"
+    if [ $FLAG_B -eq 1 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_FIND_OPTIONS"
     else
+        TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE \
+                             -o frame.generate_epoch_time:TRUE          \
+                             -o tcp.check_checksum:TRUE                 \
+                             -o tcp.desegment_tcp_streams:TRUE          \
+                             -o tcp.analyze_sequence_numbers:TRUE       \
+                             -o tcp.relative_sequence_numbers:TRUE      \
+                             -o tcp.track_bytes_in_flight:TRUE          \
+                             -o tcp.calculate_timestamps:TRUE           \
+                             -o tcp.try_heuristic_first:FALSE           \
+                             -o tcp.ignore_tcp_timestamps:TRUE          \
+                             -o tcp.no_subdissector_on_error:TRUE       \
+                             -o tcp.dissect_experimental_options_with_magic:TRUE"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:TRUE -o ip.use_geoip:TRUE"
+        fi
+    fi
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
+else
+    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:FALSE \
+                         -o tcp.summary_in_tree:FALSE                \
+                         -o tcp.check_checksum:FALSE                 \
+                         -o tcp.desegment_tcp_streams:TRUE           \
+                         -o tcp.calculate_timestamps:FALSE           \
+                         -o -o tcp.try_heuristic_first:FALSE"
+    if [ $ANALYSIS_LEVEL -ge 2 ]; then
         TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
     fi
-fi
-if [ $TIME_TYPE -eq 3 -o $FLAG_N -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
-else
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
-fi
-has_tcp_field
-if [ $? -eq 0 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 -o $FLAG_N -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE -o tcp.relative_sequence_numbers:TRUE -o tcp.track_bytes_in_flight:TRUE"
-else
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE -o tcp.relative_sequence_numbers:FALSE -o tcp.track_bytes_in_flight:FALSE"
-fi
-
-if [ $FLAG_B -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="$TSHARK_FIND_OPTIONS"
+    if [ $TIME_TYPE -eq 3 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
+    fi
+    has_tcp_analysis_field=0
+    if [ $FLAG_F -eq 1 ]; then
+        case $CUSTOM_FIELD in
+            tcp.analysis.*) has_tcp_analysis_field=1;;
+        esac
+    fi
+    if [ $has_tcp_analysis_field -eq 0 -a $FLAG_F2 -eq 1 ]; then
+        case $CUSTOM_FIELD2 in
+            tcp.analysis.*) has_tcp_analysis_field=1;;
+        esac
+    fi
+    if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE"
+    fi
+    if [ $FLAG_Q -eq 1 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+    fi
+    if [ "$CUSTOM_FIELD" = "tcp.analysis.bytes_in_flight" -o "$CUSTOM_FIELD2" = "tcp.analysis.bytes_in_flight" ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
+    fi
 fi
 
 #==============================================================#
