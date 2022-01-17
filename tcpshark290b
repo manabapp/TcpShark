@@ -2604,7 +2604,7 @@ else
                          -o tcp.check_checksum:FALSE                 \
                          -o tcp.desegment_tcp_streams:TRUE           \
                          -o tcp.calculate_timestamps:FALSE           \
-                         -o -o tcp.try_heuristic_first:FALSE"
+                         -o tcp.try_heuristic_first:FALSE"
     if [ $ANALYSIS_LEVEL -ge 2 ]; then
         TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
     fi
