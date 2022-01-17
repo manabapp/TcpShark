@@ -2578,33 +2578,33 @@ if [ $ANALYSIS_LEVEL -ge 2 ]; then
 fi
 
 if [ $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE \
+                         -o frame.generate_epoch_time:TRUE          \
+                         -o tcp.check_checksum:TRUE                 \
+                         -o tcp.desegment_tcp_streams:TRUE          \
+                         -o tcp.analyze_sequence_numbers:TRUE       \
+                         -o tcp.relative_sequence_numbers:TRUE      \
+                         -o tcp.track_bytes_in_flight:TRUE          \
+                         -o tcp.calculate_timestamps:TRUE           \
+                         -o tcp.try_heuristic_first:FALSE           \
+                         -o tcp.ignore_tcp_timestamps:TRUE          \
+                         -o tcp.no_subdissector_on_error:TRUE       \
+                         -o tcp.dissect_experimental_options_with_magic:TRUE"
+    if [ $ANALYSIS_LEVEL -ge 2 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:TRUE -o ip.use_geoip:TRUE"
+    fi
     if [ $FLAG_B -eq 1 ]; then
         TSHARK_MAIN_OPTIONS="$TSHARK_FIND_OPTIONS"
-    else
-        TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:TRUE \
-                             -o frame.generate_epoch_time:TRUE          \
-                             -o tcp.check_checksum:TRUE                 \
-                             -o tcp.desegment_tcp_streams:TRUE          \
-                             -o tcp.analyze_sequence_numbers:TRUE       \
-                             -o tcp.relative_sequence_numbers:TRUE      \
-                             -o tcp.track_bytes_in_flight:TRUE          \
-                             -o tcp.calculate_timestamps:TRUE           \
-                             -o tcp.try_heuristic_first:FALSE           \
-                             -o tcp.ignore_tcp_timestamps:TRUE          \
-                             -o tcp.no_subdissector_on_error:TRUE       \
-                             -o tcp.dissect_experimental_options_with_magic:TRUE"
-        if [ $ANALYSIS_LEVEL -ge 2 ]; then
-            TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:TRUE -o ip.use_geoip:TRUE"
-        fi
     fi
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
 else
     TSHARK_MAIN_OPTIONS="-o nameres.use_external_name_resolver:FALSE \
-                         -o tcp.summary_in_tree:FALSE                \
                          -o tcp.check_checksum:FALSE                 \
-                         -o tcp.desegment_tcp_streams:TRUE           \
                          -o tcp.calculate_timestamps:FALSE           \
-                         -o tcp.try_heuristic_first:FALSE"
+                         -o tcp.try_heuristic_first:FALSE            \
+                         -o tcp.ignore_tcp_timestamps:TRUE           \
+                         -o tcp.no_subdissector_on_error:TRUE        \
+                         -o tcp.dissect_experimental_options_with_magic:FALSE"
     if [ $ANALYSIS_LEVEL -ge 2 ]; then
         TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.dns_pkt_addr_resolution:FALSE -o ip.use_geoip:FALSE"
     fi
@@ -2612,6 +2612,11 @@ else
         TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
     else
         TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
+    fi
+    if [ $FLAG_S -eq 1 ]; then
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.desegment_tcp_streams:TRUE"
+    else
+        TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.desegment_tcp_streams:FALSE"
     fi
     has_tcp_analysis_field=0
     if [ $FLAG_F -eq 1 ]; then
