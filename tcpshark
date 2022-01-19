@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.7.5"                                                #
+VERSION="2.8.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -316,9 +316,32 @@ fi
     echo "                         is displayed."
     echo ""
     echo "    <one mode>"
-    echo "      Output of the following command is displayed as is."
+    echo "      TcpShark displays output of the following command as is."
     echo ""
     echo "        $ tshark -r <infile> -Y \"frame.number == <number>\" -V"
+    echo ""
+    echo "      Note that TcpShark runs under the following settings:"
+    echo ""
+    echo "          nameres.mac_name: TRUE"
+    echo "          nameres.transport_name:TRUE"
+    echo "          nameres.network_name: FALSE"
+    echo "          frame.generate_epoch_time: TRUE"
+    echo "          vlan.summary_in_tree: FALSE"
+    echo "          ip.summary_in_tree: FALSE"
+    echo "          ip.use_geoip: FALSE                 (Wireshark 2.0.0 or newer)"
+    echo "          ipv6.summary_in_tree: FALSE"
+    echo "          tcp.summary_in_tree: FALSE"
+    echo "          tcp.check_checksum: TRUE"
+    echo "          tcp.desegment_tcp_streams: TRUE"
+    echo "          tcp.analyze_sequence_numbers: TRUE"
+    echo "          tcp.relative_sequence_numbers: TRUE"
+    echo "          tcp.track_bytes_in_flight: TRUE"
+    echo "          tcp.calculate_timestamps: TRUE"
+    echo "          udp.summary_in_tree: FALSE"
+    echo ""
+    echo "      For details on these options, see output of the following command:"
+    echo ""
+    echo "        $ tshark -G defaultprefs"
     echo ""
     echo ""
     echo "ENVIRONMENT VARIABLES"
@@ -493,7 +516,7 @@ tcp_stream_list()
     # Finds any stream                             #
     #==============================================#
     printf "Searching file...\r" 1>&2
-    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1`
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 $TSHARK_FIND_OPTIONS`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -532,7 +555,7 @@ tcp_stream_list()
     # Finds specific stream                        #
     #==============================================#
     if [ $nofilter -eq 0 ]; then
-        line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1`
+        line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 $TSHARK_FIND_OPTIONS`
         if [ $? -ne 0 ]; then
             return 1
         fi
@@ -565,30 +588,32 @@ tcp_stream_list()
     -e tcp.flags.ns \
     -e tcp.len"
     
-    tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
-    tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
-    if [ $ANALYSIS_LEVEL -ge 1 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+    if [ $FLAG_Z -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
+        tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
+        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
+        tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_full"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_update"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
+        fi
+        if [ $ANALYSIS_LEVEL -ge 3 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     fi
-    tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
-    tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
-    tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
-    tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
-    tshark_fields="$tshark_fields -e tcp.analysis.window_full"
-    tshark_fields="$tshark_fields -e tcp.analysis.window_update"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
-    tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
-    tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
-    if [ $ANALYSIS_LEVEL -ge 2 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
-    fi
-    if [ $ANALYSIS_LEVEL -ge 3 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
-    fi
-    tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     
     if [ $FLAG_F -eq 1 ]; then
         duplicated=0
@@ -715,7 +740,7 @@ tcp_stream_list()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing... \r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_MAIN_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
                      -v descending="$FLAG_D"             \
@@ -885,30 +910,32 @@ tcp_stream_list()
         aces_colors["ifo"] = ACES_YELLOW
         aces_colors["prt"] = ACES_BOLD
         
-        i = 0
-        analysis_keys[i++] = "ret"
-        analysis_keys[i++] = "fst"
-        if (analysis_level >= 1)
-            analysis_keys[i++] = "spu"
-        analysis_keys[i++] = "dup"
-        analysis_keys[i++] = "out"
-        analysis_keys[i++] = "los"
-        analysis_keys[i++] = "alo"
-        analysis_keys[i++] = "ful"
-        analysis_keys[i++] = "wup"
-        analysis_keys[i++] = "zro"
-        analysis_keys[i++] = "zrp"
-        analysis_keys[i++] = "zpa"
-        analysis_keys[i++] = "kep"
-        analysis_keys[i++] = "kpa"
-        if (analysis_level >= 2)
-            analysis_keys[i++] = "tfo"
-        if (analysis_level >= 3) {
-            analysis_keys[i++] = "afo"
-            analysis_keys[i++] = "ifo"
+        if (analysis) {
+            i = 0
+            analysis_keys[i++] = "ret"
+            analysis_keys[i++] = "fst"
+            if (analysis_level >= 1)
+                analysis_keys[i++] = "spu"
+            analysis_keys[i++] = "dup"
+            analysis_keys[i++] = "out"
+            analysis_keys[i++] = "los"
+            analysis_keys[i++] = "alo"
+            analysis_keys[i++] = "ful"
+            analysis_keys[i++] = "wup"
+            analysis_keys[i++] = "zro"
+            analysis_keys[i++] = "zrp"
+            analysis_keys[i++] = "zpa"
+            analysis_keys[i++] = "kep"
+            analysis_keys[i++] = "kpa"
+            if (analysis_level >= 2)
+                analysis_keys[i++] = "tfo"
+            if (analysis_level >= 3) {
+                analysis_keys[i++] = "afo"
+                analysis_keys[i++] = "ifo"
+            }
+            analysis_keys[i++] = "prt"
+            analysis_num = i
         }
-        analysis_keys[i++] = "prt"
-        analysis_num = i
         
         months["Jan"] = 1
         months["Feb"] = 2
@@ -947,9 +974,11 @@ tcp_stream_list()
         e_flags["cwr"]    = $17
         e_flags["ns"]     = $18
         e_len             = $19
-        for (i = 0; i < analysis_num; i++) {
-            key = analysis_keys[i]
-            e_analysis[key] = $(20 + i)
+        if (analysis) {
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                e_analysis[key] = $(20 + i)
+            }
         }
         if (custom) {
             if (custom_column == 0)
@@ -1179,7 +1208,7 @@ tcp_stream_flow()
     fi
     tshark_fields="$tshark_fields -e tcp.stream"  # dummy field for Cygwin
     
-    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 -T fields $tshark_fields`
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 -T fields $tshark_fields $TSHARK_FIND_OPTIONS`
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1259,31 +1288,32 @@ tcp_stream_flow()
     -e tcp.options.timestamp.tsval \
     -e tcp.options.timestamp.tsecr"
     
-    tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
-    tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
-    if [ $ANALYSIS_LEVEL -ge 1 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+    if [ $FLAG_Z -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
+        tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
+        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
+        tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_full"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_update"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
+        fi
+        if [ $ANALYSIS_LEVEL -ge 3 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
     fi
-    tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
-    tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
-    tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
-    tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
-    tshark_fields="$tshark_fields -e tcp.analysis.window_full"
-    tshark_fields="$tshark_fields -e tcp.analysis.window_update"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
-    tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
-    tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
-    tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
-    if [ $ANALYSIS_LEVEL -ge 2 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
-    fi
-    if [ $ANALYSIS_LEVEL -ge 3 ]; then
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
-        tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
-    fi
-    tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
-    
     if [ $FLAG_I -eq 1 ]; then
         if [ $ANALYSIS_LEVEL -le 1 ]; then
             tshark_fields="$tshark_fields -e col.Protocol -e col.Info"
@@ -1462,7 +1492,7 @@ tcp_stream_flow()
     # Executes tshark                              #
     #==============================================#
     printf "Now analyzing... \r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_MAIN_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
                      -v time_type="$TIME_TYPE"           \
                      -v first_rtime="$first_rtime"       \
@@ -1629,30 +1659,32 @@ tcp_stream_flow()
         aces_colors["ifo"] = ACES_YELLOW
         aces_colors["prt"] = ACES_BOLD
         
-        i = 0
-        analysis_keys[i++] = "ret"
-        analysis_keys[i++] = "fst"
-        if (analysis_level >= 1)
-            analysis_keys[i++] = "spu"
-        analysis_keys[i++] = "dup"
-        analysis_keys[i++] = "out"
-        analysis_keys[i++] = "los"
-        analysis_keys[i++] = "alo"
-        analysis_keys[i++] = "ful"
-        analysis_keys[i++] = "wup"
-        analysis_keys[i++] = "zro"
-        analysis_keys[i++] = "zrp"
-        analysis_keys[i++] = "zpa"
-        analysis_keys[i++] = "kep"
-        analysis_keys[i++] = "kpa"
-        if (analysis_level >= 2)
-            analysis_keys[i++] = "tfo"
-        if (analysis_level >= 3) {
-            analysis_keys[i++] = "afo"
-            analysis_keys[i++] = "ifo"
+        if (analysis) {
+            i = 0
+            analysis_keys[i++] = "ret"
+            analysis_keys[i++] = "fst"
+            if (analysis_level >= 1)
+                analysis_keys[i++] = "spu"
+            analysis_keys[i++] = "dup"
+            analysis_keys[i++] = "out"
+            analysis_keys[i++] = "los"
+            analysis_keys[i++] = "alo"
+            analysis_keys[i++] = "ful"
+            analysis_keys[i++] = "wup"
+            analysis_keys[i++] = "zro"
+            analysis_keys[i++] = "zrp"
+            analysis_keys[i++] = "zpa"
+            analysis_keys[i++] = "kep"
+            analysis_keys[i++] = "kpa"
+            if (analysis_level >= 2)
+                analysis_keys[i++] = "tfo"
+            if (analysis_level >= 3) {
+                analysis_keys[i++] = "afo"
+                analysis_keys[i++] = "ifo"
+            }
+            analysis_keys[i++] = "prt"
+            analysis_num = i
         }
-        analysis_keys[i++] = "prt"
-        analysis_num = i
         
         months["Jan"] = 1
         months["Feb"] = 2
@@ -1696,9 +1728,11 @@ tcp_stream_flow()
         e_options["sack_re"]  = $26
         e_options["ts_val"]   = $27
         e_options["ts_ecr"]   = $28
-        for (i = 0; i < analysis_num; i++) {
-            key = analysis_keys[i]
-            e_analysis[key] = $(29 + i)
+        if (analysis) {
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                e_analysis[key] = $(29 + i)
+            }
         }
         if (protoinfo) {
             e_protocol    = $(29 + analysis_num)
@@ -1951,7 +1985,7 @@ tcp_stream_one()
     # Dummy search to check frame number           #
     #==============================================#
     printf "Finding packet...\r" 1>&2
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 > /dev/null
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 $TSHARK_FIND_OPTIONS > /dev/null
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -1959,7 +1993,7 @@ tcp_stream_one()
     #==============================================#
     # Executes tshark                              #
     #==============================================#
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -c $FRAME_NUMBER -V $TSHARK_OPTIONS | \
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -c $FRAME_NUMBER -V $TSHARK_MAIN_OPTIONS | \
       "$AWK_COMMAND" -v os_type="$OS_TYPE" \
                      -v appearance="$APPEARANCE" '
     BEGIN {
@@ -2203,7 +2237,8 @@ ANALYSIS_LEVEL=0
 DISPLAY_VENDOR=0
 EXPERT_TYPE=0
 TSHARK_INFILE=""
-TSHARK_OPTIONS=""
+TSHARK_FIND_OPTIONS=""
+TSHARK_MAIN_OPTIONS=""
 CUSTOM_FIELD=""
 CUSTOM_FIELD2=""
 TIME_TYPE=0
@@ -2541,14 +2576,62 @@ fi
 #==============================================================#
 # Builds tshark's option parameter                             #
 #==============================================================#
-TSHARK_OPTIONS="-o tcp.analyze_sequence_numbers:TRUE"
-if [ $FLAG_Q -eq 1 ]; then
-    TSHARK_OPTIONS="$TSHARK_OPTIONS -o tcp.relative_sequence_numbers:TRUE"
+TSHARK_FIND_OPTIONS="-o nameres.mac_name:FALSE              \
+                     -o nameres.transport_name:FALSE        \
+                     -o nameres.network_name:FALSE          \
+                     -o frame.generate_epoch_time:FALSE     \
+                     -o tcp.check_checksum:FALSE            \
+                     -o tcp.desegment_tcp_streams:TRUE      \
+                     -o tcp.analyze_sequence_numbers:FALSE  \
+                     -o tcp.relative_sequence_numbers:FALSE \
+                     -o tcp.track_bytes_in_flight:FALSE     \
+                     -o tcp.calculate_timestamps:FALSE"
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o ip.use_geoip:FALSE"
+fi
+
+TSHARK_MAIN_OPTIONS="-o nameres.network_name:FALSE -o tcp.desegment_tcp_streams:TRUE"
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.use_geoip:FALSE"
+fi
+if [ $TIME_TYPE -eq 3 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
 else
-    TSHARK_OPTIONS="$TSHARK_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
+fi
+has_tcp_analysis_field=0
+if [ $FLAG_F -eq 1 ]; then
+    case $CUSTOM_FIELD in
+        tcp.analysis.*) has_tcp_analysis_field=1;;
+    esac
+fi
+if [ $has_tcp_analysis_field -ne 1 -a $FLAG_F2 -eq 1 ]; then
+    case $CUSTOM_FIELD2 in
+        tcp.analysis.*) has_tcp_analysis_field=1;;
+    esac
+fi
+if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE"
+fi
+if [ $FLAG_Q -eq 1 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+fi
+if [ "$CUSTOM_FIELD" = "tcp.analysis.bytes_in_flight" -o "$CUSTOM_FIELD2" = "tcp.analysis.bytes_in_flight" -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
 fi
 if [ $FLAG_N -eq 1 ]; then
-    TSHARK_OPTIONS="$TSHARK_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE -o nameres.transport_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE -o tcp.calculate_timestamps:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE -o nameres.transport_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE -o tcp.calculate_timestamps:FALSE"
 fi
 
 #==============================================================#
