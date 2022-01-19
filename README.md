@@ -257,10 +257,33 @@ Streams or packets are output in the following format:
                          is displayed.
 
 ### flow mode
-Output of the following command is displayed as is.
+TcpShark displays output of the following command as is.
 
     $ tshark -r <infile> -Y "frame.number == <number>" -V
-        
+
+Note that TcpShark runs under the following settings:
+
+      nameres.mac_name: TRUE
+      nameres.transport_name:TRUE
+      nameres.network_name: FALSE
+      frame.generate_epoch_time: TRUE
+      vlan.summary_in_tree: FALSE
+      ip.summary_in_tree: FALSE
+      ip.use_geoip: FALSE                 (Wireshark 2.0.0 or newer)
+      ipv6.summary_in_tree: FALSE
+      tcp.summary_in_tree: FALSE
+      tcp.check_checksum: TRUE
+      tcp.desegment_tcp_streams: TRUE
+      tcp.analyze_sequence_numbers: TRUE
+      tcp.relative_sequence_numbers: TRUE
+      tcp.track_bytes_in_flight: TRUE
+      tcp.calculate_timestamps: TRUE
+      udp.summary_in_tree: FALSE
+
+For details on these options, see output of the following command:
+
+    $ tshark -G defaultprefs
+
 # ENVIRONMENT VARIABLES
 |Variable|Description|
 |:--|:--|
