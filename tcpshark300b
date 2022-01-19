@@ -1,0 +1,2710 @@
+#!/bin/sh
+##################### DONT EDIT THIS FILE ######################
+#                                                              #
+NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
+VERSION="3.0.0 beta"                                           #
+AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
+#                                                              #
+#                                 Copyright (C) 2022 manabapp. #
+################################################################
+
+#==============================================================#
+# Defines                                                      #
+#==============================================================#
+MAX_STREAMS_DEFAULT=262144
+MAX_STREAMS_LIMIT=1048576
+MAX_INFOLEN_DEFAULT=48
+MAX_LENGTH_LIMIT=65536
+APPEARANCE_DEFAULT=1   # Dark
+
+#==============================================================#
+# Function: Prints usage                                       #
+#==============================================================#
+usage()
+{
+if [ $OS_TYPE -eq 0 ]; then
+    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-d] [-z | -f <field>]" 1>&2
+else
+    echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 1>&2
+fi
+    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-o | -x <length> | -f <field> | -e rtt|rto|dup]" 1>&2
+    echo "       tcpshark -r <infile> -n <number> [-C]" 1>&2
+    echo "       tcpshark -h  (TcpShark's Manual)" 1>&2
+    exit 1
+}
+
+#==============================================================#
+# Function: Prints version & md5 hash                          #
+#==============================================================#
+print_version()
+{
+    cmd=$0
+    if [ ! -f $cmd ]; then
+        cmd=`which tcpshark`
+        if [ $? -ne 0 ]; then
+            echo "TcpShark version: ${VERSION}  (md5:Unknown)"
+            exit 0
+        fi
+    fi
+    if [ $OS_TYPE -eq 2 ]; then
+        sum=`md5 $cmd | cut -d' ' -f 4`
+    else
+        sum=`md5sum $cmd | cut -d' ' -f 1`
+    fi
+    echo "TcpShark version: ${VERSION}  (md5:${sum})"
+    exit 0
+}
+
+#==============================================================#
+# Function: Prints on-line manual                              #
+#==============================================================#
+print_help()
+{
+    echo "NAME"
+    echo "    ${NAME}"
+    echo ""
+    echo "SYNOPSIS"
+    echo "    <list mode>"
+    echo "    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>]"
+if [ $OS_TYPE -eq 0 ]; then
+    echo "                         [-d] [-z | -f <field>]"
+else
+    echo "                         [-z | -f <field>]"
+fi
+    echo ""
+    echo "    <flow mode>"
+    echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]"
+    echo "                         [-z] [-o | -x <length> | -f <field> | -e rtt|rto|dup]"
+    echo ""
+    echo "    <one mode>"
+    echo "    tcpshark -r <infile> -n <number> [-C]"
+    echo ""
+    echo "DESCRIPTION"
+    echo "    TcpShark is network analyzing script, powered by Wireshark."
+    echo "    This utility displays visually TCP stream for ease of analysis."
+    echo ""
+    echo "    How to use:"
+    echo "      First, lists TCP streams in list mode."
+    echo "      Next, specifies the index of stream and looks over the packet flow in flow"
+    echo "      mode. In addition, you can analyze as you like by piping the result to"
+    echo "      'less -R' command."
+    echo ""
+    echo "        $ tcpshark -r tcpdump.pcap -s 0 | less -R"
+    echo ""
+    echo "OPTIONS"
+    echo "    -r <infile>"
+    echo "          Reads packet data from infile."
+    echo "          This utility can analyze the file captured by Wireshark, tcpdump,"
+    echo "          snoop, etc."
+    echo ""
+    echo "    -s <index>"
+    echo "          Displays the specific stream in flow mode."
+    echo ""
+    echo "    -n <number>"
+    echo "          Displays the specific packet in one mode."
+    echo ""
+    echo "    -H"
+    echo "          Omits the header information."
+    echo ""
+    echo "    -C"
+    echo "          Displays a result in colorless."
+    echo "          In default, displays colorfully with ANSI color escape sequences."
+    echo ""
+    echo "    -t a|ad|dd|e|r|rs"
+    echo "          Selects the format of the packet timestamp."
+    echo ""
+    echo "          The format can be one of:"
+    echo ""
+    echo "            a    absolute time with no date [default]"
+    echo "            ad   absolute date and time"
+    echo "            dd   delta time since the previous displayed packet"
+    echo "            e    epoch time in seconds since Jan 1, 1970 00:00:00"
+    echo "            r    relative time since the first packet in the capture file"
+    echo "            rs   relative time since the first packet in the stream"
+    echo ""
+    echo "    -p <port>"
+    echo "          Only streams with specified port are displayed."
+    echo ""
+    echo "    -4"
+    echo "          Only IPv4 streams are displayed."
+    echo ""
+    echo "    -6 "
+    echo "          Only IPv6 streams are displayed."
+    echo ""
+    echo "    -a <addr>"
+    echo "          Only streams with specified IPv4/v6 address are displayed."
+    echo ""
+if [ $OS_TYPE -eq 0 ]; then
+    echo "    -d"
+    echo "          Streams list is sorted in descending order according to the total"
+    echo "          number of packets."
+    echo ""
+fi
+    echo "    -v"
+    echo "          Reverses the source and destination."
+    echo ""
+    echo "    -w"
+    echo "          Calculated window size is displayed, if scaling."
+    echo ""
+    echo "    -q"
+    echo "          Relative sequence numbers and acknowledgement numbers are displayed."
+    echo "          In default, absolute numbers."
+    echo ""
+    echo "    -z"
+    echo "          TCP analysis information is displayed."
+    echo "          In detail, see \"OUTPUT FORMAT\"."
+    echo ""
+    echo "    -i"
+    echo "          Information for upper layer protocol is displayed."
+    echo ""
+    echo "    -x <length>"
+    echo "          TCP segment data up to the specified bytes is output by hexadecimal"
+    echo "          dump. (Wireshark 2.4.0 or newer)"
+    echo "          Upper limit is ${MAX_LENGTH_LIMIT}. If length is 0, all data is displayed."
+    echo "          NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet."
+    echo ""
+    echo "    -f <field>"
+    echo "          Specified field is displayed."
+    echo "          In list mode, statistics information is displayed in each direction."
+    echo "          In flow mode, can be specified up to twice."
+    echo "          About available field, see Wireshark web site."
+    echo ""
+    echo "            https://www.wireshark.org/docs/dfref/"
+    echo ""
+    echo "    -e rtt|rto|dup"
+    echo "          Selects the type of TCP expert information."
+    echo ""
+    echo "          The type can be one of:"
+    echo ""
+    echo "            rtt   RTT to ACK the segment in frame"
+    echo "            rto   RTO for this segment from frame"
+    echo "            dup   Duplicate to the ACK in frame, and times"
+    echo ""
+    echo "    -h"
+    echo "          Prints this help page."
+    echo ""
+    echo "    -V"
+    echo "          Prints the version and exits."
+    echo ""
+    echo "OUTPUT FORMAT"
+    echo "    Streams or packets are output in the following format:"
+    echo ""
+    echo "    <list mode>"
+    echo "      Filter             Display filter used by Wireshark."
+    echo ""
+    echo "      CField             Custom field for statistics information."
+    echo ""
+    echo "      Index              Stream index."
+    echo ""
+    echo "      TIME               Timestamp in first packet."
+    echo ""
+    echo "      Src/Dst ADDRESS    Source/Destination IP address and port."
+    echo "                         When IPv6 packets are encapsulated into IPv4 (6to4,"
+    echo "                         6in4, or 6rd), both address pairs of the stream are"
+    echo "                         displayed."
+    echo ""
+    echo "      Duration           Period between first/last packets."
+    echo ""
+    echo "      FLAGS              TCP flag's bitwize OR on all packets."
+    echo ""
+    echo "                           F : Fin"
+    echo "                           S : Syn"
+    echo "                           R : Reset"
+    echo "                           P : Push"
+    echo "                           A : Acknowledgment"
+    echo "                           U : Urgent"
+    echo "                           E : ECN-Echo"
+    echo "                           C : Congestion Window Reduced (CWR)"
+    echo "                           N : Nonce"
+    echo ""
+    echo "      Packets Bytes      Number of packets count and total of TCP data length in"
+    echo "                         each direction."
+    echo "                         Note that data length is not a frame size."
+    echo ""
+    echo "      Protocol           Upper layer protocol over TCP/IP."
+    echo ""
+    echo "      Custom STATISTICS  Number of packets which includes the specified field."
+    echo "                         Calculates sum-total, minimum, maximum and average"
+    echo "                         value, if field type is numerical (INT, UINT, BOOLEAN,"
+    echo "                         DOUBLE, FLOAT, or RELATIVE_TIME)."
+    echo ""
+    echo "      Analysis           TCP analysis statistics."
+    echo ""
+    echo "                           ret : Retransmission"
+    echo "                           fst : Fast Retransmission"
+    echo "                           spu : Spurious Retransmission  (Wireshark 1.12.0 or newer)"
+    echo "                           dup : Duplicate ACK"
+    echo "                           out : Out Of Order"
+    echo "                           los : Previous Segment Unseen"
+    echo "                           alo : ACKed Unseen Packet"
+    echo "                           wup : Window update"
+    echo "                           ful : Window full"
+    echo "                           zro : Zero Window"
+    echo "                           zrp : Zero Window Probe"
+    echo "                           zpa : Zero Window Probe Ack"
+    echo "                           kep : Keep Alive"
+    echo "                           kpa : Keep Alive ACK"
+    echo "                           tfo : SYN with TFO cookie      (Wireshark 2.0.0 or newer)"
+    echo "                           afo : Accepting TFO data       (Wireshark 3.4.0 or newer)"
+    echo "                           ifo : Ignoring TFO data        (Wireshark 3.4.0 or newer)"
+    echo "                           prt : TCP Port numbers reused"
+    echo ""
+    echo "    <flow mode>"
+    echo "      Filter             Display filter used by Wireshark."
+    echo ""
+    echo "      CField             Custom field(s)."
+    echo ""
+    echo "      Stream             Pair of IP address and TCP port."
+    echo "                         MAC addresses are displayed if Ethernet. Additionally,"
+    echo "                         vlan id is displayed if IEEE 802.1Q."
+    echo ""
+    echo "                         If known vendor, vendor name for oui is displayed."
+    echo "                         (Wireshark 3.2.0 or newer)"
+    echo ""
+    echo "      No.                Packet number in capture file."
+    echo ""
+    echo "      TIME               Timestamp in each packet."
+    echo ""
+    echo "      WINDOW Size        TCP windows size."
+    echo ""
+    echo "      Src/Dst PORT       Source or Destination port."
+    echo ""
+    echo "      LENGTH             TCP segment length."
+    echo ""
+    echo "      FLAGS              TCP flags."
+    echo "                         Please refer to the description in <list mode>."
+    echo ""
+    echo "      SEQ/ACK Number     Sequence or Acknowledgment number."
+    echo ""
+    echo "      OPTION             TCP options."
+    echo ""
+    echo "                           mwSstO"
+    echo "                           ------"
+    echo "                           |||||+ Other option (except EOL, NOP)"
+    echo "                           ||||+- TCP Time Stamp Option"
+    echo "                           |||+-- TCP SACK Option"
+    echo "                           ||+--- TCP SACK Permitted Option"
+    echo "                           |+---- TCP Window Scale Option"
+    echo "                           +----- TCP MSS Option"
+    echo ""
+    echo "      Analysis           TCP analysis information for TCP troubleshooting."
+    echo "                         Please refer to the description in <list mode>."
+    echo ""
+    echo "      Option VALUES      TCP Option's values (if some bits in OPTION area are"
+    echo "                         set)."
+    echo ""
+    echo "                           [m] MSS=XXX             : MSS value"
+    echo "                           [w] WS=XXX(YYY)         : Shift count, multiplier"
+    echo "                           [S] SACK_PERM=1         : ---"
+    echo "                           [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge"
+    echo "                           [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply"
+    echo "                           [O] OTHER(kind:XXX)     : TCP option's kind"
+    echo ""
+    echo "      Protocol           Upper layer protocol over TCP/IP."
+    echo ""
+    echo "      Information        Information for upper layer protocol."
+    echo "                         Same contents as Wireshark 'Info' field is displayed."
+    echo ""
+    echo "      Payload DATA       Hexadecimal dump and printable ascii string of TCP"
+    echo "                         segment data."
+    echo ""
+    echo "      Custom VALUE       Value of specified custom field."
+    echo "                         Only displays if each packet includes the field."
+    echo "                         If you specify -f option twice, 2nd field is displayed"
+    echo "                         in parentheses."
+    echo ""
+    echo "      Expert INFO        TCP expert information."
+    echo "                         Additional information according to the specified type"
+    echo "                         is displayed."
+    echo ""
+    echo "    <one mode>"
+    echo "      TcpShark displays output of the following command as is."
+    echo ""
+    echo "        $ tshark -r <infile> -Y \"frame.number == <number>\" -V"
+    echo ""
+    echo "      Note that TcpShark runs under the following settings:"
+    echo ""
+    echo "          nameres.mac_name: TRUE"
+    echo "          nameres.transport_name:TRUE"
+    echo "          nameres.network_name: FALSE"
+    echo "          frame.generate_epoch_time: TRUE"
+    echo "          vlan.summary_in_tree: FALSE"
+    echo "          ip.summary_in_tree: FALSE"
+    echo "          ip.use_geoip: FALSE                 (Wireshark 2.0.0 or newer)"
+    echo "          ipv6.summary_in_tree: FALSE"
+    echo "          tcp.summary_in_tree: FALSE"
+    echo "          tcp.check_checksum: TRUE"
+    echo "          tcp.desegment_tcp_streams: TRUE"
+    echo "          tcp.analyze_sequence_numbers: TRUE"
+    echo "          tcp.relative_sequence_numbers: TRUE"
+    echo "          tcp.track_bytes_in_flight: TRUE"
+    echo "          tcp.calculate_timestamps: TRUE"
+    echo "          udp.summary_in_tree: FALSE"
+    echo ""
+    echo "      For details on these options, see output of the following command:"
+    echo ""
+    echo "        $ tshark -G defaultprefs"
+    echo ""
+    echo ""
+    echo "ENVIRONMENT VARIABLES"
+    echo "    TCPSHARK_TSHARK_COMMAND"
+    echo "          File path of executable command 'tshark'."
+    echo "          If command not found on your system, set the full path of the command."
+    echo ""
+if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
+    echo "    TCPSHARK_EXECUTION_USER"
+    echo "          Execution user name to use instead of root."
+    echo "          If you run as root user, TcpShark internally executes tshark as the"
+    echo "          user specified in this variable."
+    echo ""
+fi
+    echo "    TCPSHARK_MAX_STREAMS"
+    echo "          Maximum number of streams that can be processed in list mode."
+    echo "          Default value is ${MAX_STREAMS_DEFAULT}. Upper limit is ${MAX_STREAMS_LIMIT}."
+    echo "          If a huge number of streams in your capture file, set the number of"
+    echo "          streams or each more."
+    echo "          Note that it may require a lot of memory to process huge streams."
+    echo ""
+    echo "    TCPSHARK_APPEARANCE"
+    echo "          TcpShark displays colorfully with ANSI color escape sequences."
+    echo "          Selects appearance according to your terminal color from 'Dark' or"
+    echo "          'Light'. Default is 'Dark'."
+    echo "          If your terminal's background is whitish color, set 'Light'."
+    echo ""
+    echo "    TCPSHARK_MAX_INFORMATION_LENGTH"
+    echo "          Maximum length of protocol information in flow mode."
+    echo "          If an information is longer than this length, the information is"
+    echo "          truncated to this length."
+    echo "          Default length is ${MAX_INFOLEN_DEFAULT}. Upper limit is ${MAX_LENGTH_LIMIT}. If 0, not truncated."
+    echo ""
+    echo "EXIT STATUS"
+    echo "    This utility exits 0 on success, or 1 if error."
+    echo ""
+    echo "Copyright (C) 2022 manabapp."
+    echo ""
+    exit 0
+}
+
+#==============================================================#
+# Function: Checks if an integer in the range                  #
+#==============================================================#
+check_streams()
+{
+    number=$1
+    expr "$number" + 1 > /dev/null 2>&1
+    if [ $? -lt 2 ] ; then
+        if [ $number -ge 1 -a $number -le $MAX_STREAMS_LIMIT ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+#==============================================================#
+# Function: Checks if an integer in the range for data length  #
+#==============================================================#
+check_length()
+{
+    length=$1
+    expr "$length" + 1 > /dev/null 2>&1
+    if [ $? -lt 2 ] ; then
+        if [ $length -ge 0 -a $length -le $MAX_LENGTH_LIMIT ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+#==============================================================#
+# Function: Checks if the field is supported                   #
+#==============================================================#
+check_field()
+{
+    $PRE_COMMAND "$TSHARK_COMMAND" -G fields | cut -f 3 | "$GREP_COMMAND" -Fx "$1" > /dev/null 2>&1
+    return $?
+}
+
+#==============================================================#
+# Function: Returns wireshark version                          #
+#==============================================================#
+get_version()
+{
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -v | head -1`
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    version=`echo "$line" | cut -d ' ' -f 2`
+    echo "$version" | "$GREP_COMMAND" "^[0-9][\.0-9]*$" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        printf "$version"
+        return
+    fi
+    version=`echo "$line" | cut -d ' ' -f 3`
+    echo "$version" | "$GREP_COMMAND" "^[0-9][\.0-9]*$" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        printf "$version"
+        return
+    fi
+    printf "unknown"
+}
+
+#==============================================================#
+# Function: Returns field type (0:ohter, 1:integer, 2:float)   #
+#==============================================================#
+get_ftype()
+{
+    $PRE_COMMAND "$TSHARK_COMMAND" -G fields | "$AWK_COMMAND" -F "\t" -v field="$1" '
+    BEGIN {
+        type = 0
+    };
+    /^F/ {
+        if ($3 == field) {
+            if ($4 == "FT_BOOLEAN")            type = 1
+            else if ($4 == "FT_INT8")          type = 1
+            else if ($4 == "FT_INT16")         type = 1
+            else if ($4 == "FT_INT24")         type = 1
+            else if ($4 == "FT_INT32")         type = 1
+            else if ($4 == "FT_INT64")         type = 1
+            else if ($4 == "FT_UINT8")         type = 1
+            else if ($4 == "FT_UINT16")        type = 1
+            else if ($4 == "FT_UINT24")        type = 1
+            else if ($4 == "FT_UINT32")        type = 1
+            else if ($4 == "FT_UINT64")        type = 1
+            else if ($4 == "FT_FLOAT")         type = 2
+            else if ($4 == "FT_DOUBLE")        type = 2
+            else if ($4 == "FT_RELATIVE_TIME") type = 2
+            else                               type = 0
+            exit
+        }
+    };
+    END {
+        printf(type)
+    } '
+}
+
+#==============================================================#
+# Function: Returns end one of comma separated values          #
+#==============================================================#
+get_value()
+{
+    echo "$1" | "$AWK_COMMAND" -F "\t" -v column="$2" '
+    {
+        if ($column == "") {
+            value = ""
+        }
+        else {
+            num = split($column, array, ",")
+            if (num == 0)
+                value = ""
+            else
+                value = array[num]
+        }
+        printf(value)
+    } '
+}
+
+#==============================================================#
+# Function: Runs in list mode                                  #
+#==============================================================#
+tcp_stream_list()
+{
+    tshark_filter="tcp"
+    custom_column=0
+    custom_ftype=0
+    analysis_header=""
+    space_num=0
+    
+    #==============================================#
+    # Finds any stream                             #
+    #==============================================#
+    printf "Searching file...\r" 1>&2
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 $TSHARK_FIND_OPTIONS`
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    if [ -z "$line" ]; then
+        printf "WARNING: No TCP packets.\n" 1>&2
+        return 1
+    fi
+    
+    #==============================================#
+    # Builds tshark's filter                       #
+    #==============================================#
+    nofilter=1
+    if [ $FLAG_P -eq 1 ]; then
+        tshark_filter="tcp.port == $FILTER_PORT"
+        nofilter=0
+    fi
+    if [ $FLAG_A -eq 1 ]; then
+        echo "$FILTER_ADDR" | "$GREP_COMMAND" : > /dev/null
+        if [ $? -eq 0 ]; then
+            tshark_filter="$tshark_filter and ipv6.addr == $FILTER_ADDR"
+        else
+            tshark_filter="$tshark_filter and ip.addr == $FILTER_ADDR"
+        fi
+        nofilter=0
+    fi
+    if [ $FLAG_4 -eq 1 ]; then
+        tshark_filter="$tshark_filter and ip"
+        nofilter=0
+    fi
+    if [ $FLAG_6 -eq 1 ]; then
+        tshark_filter="$tshark_filter and ipv6"
+        nofilter=0
+    fi
+    
+    #==============================================#
+    # Finds specific stream                        #
+    #==============================================#
+    if [ $nofilter -eq 0 ]; then
+        line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 $TSHARK_FIND_OPTIONS`
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+        if [ -z "$line" ]; then
+            printf "WARNING: No such TCP stream.\n" 1>&2
+            return 1
+        fi
+    fi
+    
+    #==============================================#
+    # Builds tshark's fields list                  #
+    #==============================================#
+    tshark_fields="-e tcp.stream \
+    -e frame.time \
+    -e frame.time_relative \
+    -e tcp.srcport \
+    -e tcp.dstport \
+    -e ip.src \
+    -e ip.dst \
+    -e ipv6.src \
+    -e ipv6.dst \
+    -e tcp.flags.fin \
+    -e tcp.flags.syn \
+    -e tcp.flags.reset \
+    -e tcp.flags.push \
+    -e tcp.flags.ack \
+    -e tcp.flags.urg \
+    -e tcp.flags.ecn \
+    -e tcp.flags.cwr \
+    -e tcp.flags.ns \
+    -e tcp.len"
+    
+    if [ $FLAG_Z -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
+        tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
+        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
+        tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_full"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_update"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
+        fi
+        if [ $ANALYSIS_LEVEL -ge 3 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
+    elif [ $FLAG_F -eq 1 ]; then
+        duplicated=0
+        for field in $tshark_fields ; do
+            if [ $field = "-e" ]; then
+                continue
+            fi
+            custom_column=`expr $custom_column + 1`
+            if [ $field = "$CUSTOM_FIELD" ]; then
+                duplicated=1
+                break
+            fi
+        done
+        if [ $duplicated -eq 0 ]; then
+            custom_column=0
+            tshark_fields="$tshark_fields -e $CUSTOM_FIELD"
+        fi
+        custom_ftype=`get_ftype $CUSTOM_FIELD`
+    else
+        if [ $ANALYSIS_LEVEL -le 1 ]; then
+            tshark_fields="$tshark_fields -e col.Protocol"
+        else
+            tshark_fields="$tshark_fields -e _ws.col.Protocol"
+        fi
+    fi
+    
+    #==============================================#
+    # Displays header information                  #
+    #==============================================#
+    if [ $ANALYSIS_LEVEL -eq 0 ]; then
+        analysis_header="ret  fst  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
+        space_num=12
+    elif [ $ANALYSIS_LEVEL -eq 1 ]; then
+        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
+        space_num=13
+    elif [ $ANALYSIS_LEVEL -eq 2 ]; then
+        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  prt"
+        space_num=14
+    else
+        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  afo  ifo  prt"
+        space_num=16
+    fi
+    if [ $FLAG_H -ne 1 ]; then
+        printf "====="
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "============================"
+        else
+            printf "================="
+        fi
+        printf "===================================================="
+        printf "================"
+        printf "============="
+        if [ $FLAG_Z -eq 1 ]; then
+            printf "==="
+            for key in $analysis_header ; do
+                printf "====="
+            done
+        elif [ $FLAG_F -eq 1 ]; then
+            printf "======================================================================================"
+        else
+           #printf "=============================================="
+            printf "===================================================================="
+        fi
+        printf "\n"
+        printf "TCP Stream list\n"
+        printf "Filter: ${tshark_filter}\n"
+        if [ $FLAG_F -eq 1 ]; then
+            printf "CField: ${CUSTOM_FIELD}\n"
+        fi
+        printf "     "
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "                            "
+        else
+            printf "                 "
+        fi
+        printf "                                                    "
+        printf "                "
+        printf "             "
+        if [ $FLAG_Z -eq 1 ]; then
+            printf " | Analysis"
+            for i in `seq $space_num`; do
+                printf "     "
+            done
+            printf " |"
+        elif [ $FLAG_F -eq 1 ]; then
+            printf " | Custom STATISTICS           ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}                             |"
+        else
+           #printf " |         ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}         |"
+            printf "                       |         ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}         |"
+        fi
+        printf "\n"
+        printf "Index"
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "                        TIME"
+        else
+            printf "             TIME"
+        fi
+        printf "                    Src/Dst ADDRESS                 "
+        printf "        Duration"
+        printf "  FLAGS      "
+        if [ $FLAG_Z -eq 1 ]; then
+            printf " | ${analysis_header} |"
+        elif [ $FLAG_F -eq 1 ]; then
+            printf " |  COUNT        MIN        MAX        AVG |  COUNT        MIN        MAX        AVG |"
+        else
+           #printf " | Packets       Bytes | Packets       Bytes |"
+            printf "  Protocol             | Packets       Bytes | Packets       Bytes |"
+        fi
+        printf "\n"
+        printf "====="
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "============================"
+        else
+            printf "================="
+        fi
+        printf "===================================================="
+        printf "================"
+        printf "============="
+        if [ $FLAG_Z -eq 1 ]; then
+            printf "==="
+            for key in $analysis_header ; do
+                printf "====="
+            done
+        elif [ $FLAG_F -eq 1 ]; then
+            printf "======================================================================================"
+        else
+           #printf "=============================================="
+            printf "===================================================================="
+        fi
+        printf "\n"
+    fi
+    
+    #==============================================#
+    # Executes tshark                              #
+    #==============================================#
+    printf "Now analyzing... \r" 1>&2
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_MAIN_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
+                     -v time_type="$TIME_TYPE"           \
+                     -v descending="$FLAG_D"             \
+                     -v analysis="$FLAG_Z"               \
+                     -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v custom="$FLAG_F"                 \
+                     -v custom_column="$custom_column"   \
+                     -v custom_ftype="$custom_ftype"     \
+                     -v max_streams="$MAX_STREAMS"       \
+                     -v appearance="$APPEARANCE" '
+    function last_value(e) {
+        if (e == "")
+            return ""
+        num = split(e, array, ",")
+        if (num == 0)
+            return ""
+        return array[num]
+    }
+    function compare_streams(i1, v1, i2, v2) {
+        if (!indexes[i1])
+            return 1
+        if (!indexes[i2])
+            return -1
+        
+        rtime1 = streams[i1, "rtime"]
+        rtime2 = streams[i2, "rtime"]
+        packets1 = streams[i1, "l_packets"] + streams[i1, "r_packets"]
+        packets2 = streams[i2, "l_packets"] + streams[i2, "r_packets"]
+        bytes1 = streams[i1, "l_bytes"] + streams[i1, "r_bytes"]
+        bytes2 = streams[i2, "l_bytes"] + streams[i2, "r_bytes"]
+        
+        if (packets1 > packets2)      return -1
+        else if (packets1 < packets2) return 1
+        else if (bytes1 > bytes2) return -1
+        else if (bytes1 < bytes2) return 1
+        else if (rtime1 < rtime2) return -1
+        else                      return 1
+    }
+    function colored_port(port) {
+        if (port < 1024)
+            return sprintf("%s%-5d%s", ACES_BOLD, port, ACES_END)
+        if (port >= 32768)
+            return sprintf("%s%-5d%s", ACES_GRAY, port, ACES_END)
+        return sprintf("%-5d", port)
+    }
+    function print_analysis(cnt, aces_color) {
+        if (cnt > 0)
+            printf(" %s%4d%s", aces_color, cnt, ACES_END);
+        else
+            printf(" %s%4d%s", ACES_GRAY, cnt, ACES_END);
+    }
+    function prefix10(str) {
+        if (length(str) > 10) {
+            if (substr(str, 10, 1) == ".")
+                return substr(str, 1, 9)
+            else
+                return substr(str, 1, 10)
+        }
+        return str
+    }
+    function print_statistics(cnt, sum, min, max) {
+        if (cnt == 0)
+            printf("%s", ACES_GRAY)
+        
+        printf("  %7d",  cnt)
+        
+        if (custom_ftype == 0)      value = "-"
+        else if (custom_ftype == 2) value = prefix10(sprintf("%10.6f", min))
+        else                        value = sprintf("%d", min)
+        printf(" %10s", value)
+        
+        if (custom_ftype == 0)      value = "-"
+        else if (custom_ftype == 2) value = prefix10(sprintf("%10.6f", max))
+        else                        value = sprintf("%d", max)
+        printf(" %10s", value)
+        
+        if (custom_ftype == 0)      value = "-"
+        else if (cnt == 0)          value = "NaN"
+        else if (custom_ftype == 2) value = prefix10(sprintf("%10.6f", sum / cnt))
+        else                        value = prefix10(sprintf("%10.2f", sum / cnt))
+        printf(" %10s", value)
+        
+        if (cnt == 0)
+            printf("%s", ACES_END)
+    }
+    function print_traffic(packets, bytes) {
+        if (packets > 0)
+            printf("   %7d", packets);
+        else
+            printf("   %s%7d%s", ACES_GRAY, packets, ACES_END);
+        
+        if (bytes > 0)
+            printf("  %10u", bytes);
+        else
+            printf("  %s%10u%s", ACES_GRAY, bytes, ACES_END);
+    }
+    BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
+        FS = "\t"
+        exceeded = 0
+        analysis_num = 0
+        for (i = 0; i <= max_streams; i++)
+            indexes[i] = 0
+        
+        ### ANSI Color Escape Sequences ###
+        if (appearance == 0) {
+            ACES_BOLD    = ""
+            ACES_RED     = ""
+            ACES_GREEN   = ""
+            ACES_YELLOW  = ""
+            ACES_BLUE    = ""
+            ACES_MAGENTA = ""
+            ACES_CYAN    = ""
+            ACES_GRAY    = ""
+            ACES_END     = ""
+        }
+        else if (appearance == 1) {
+            ACES_BOLD    = "\033[1;97m"
+            ACES_RED     = "\033[1;91m"
+            ACES_GREEN   = "\033[1;92m"
+            ACES_YELLOW  = "\033[1;93m"
+            ACES_BLUE    = "\033[1;94m"
+            ACES_MAGENTA = "\033[1;95m"
+            ACES_CYAN    = "\033[1;96m"
+            ACES_GRAY    = "\033[37m"
+            ACES_END     = "\033[0m"
+        }
+        else {
+            ACES_BOLD    = "\033[1;30m"
+            ACES_RED     = "\033[1;31m"
+            ACES_GREEN   = "\033[1;32m"
+            ACES_YELLOW  = "\033[1;33m"
+            ACES_BLUE    = "\033[1;34m"
+            ACES_MAGENTA = "\033[1;35m"
+            ACES_CYAN    = "\033[1;36m"
+            ACES_GRAY    = "\033[90m"
+            ACES_END     = "\033[0m"
+        }
+        
+        aces_colors["fin"]   = ACES_GREEN
+        aces_colors["syn"]   = ACES_CYAN
+        aces_colors["reset"] = ACES_RED
+        aces_colors["push"]  = ACES_BOLD
+        aces_colors["ack"]   = ACES_GRAY
+        aces_colors["urg"]   = ACES_MAGENTA
+        aces_colors["ecn"]   = ACES_YELLOW
+        aces_colors["cwr"]   = ACES_MAGENTA
+        aces_colors["ns"]    = ACES_YELLOW
+        
+        aces_colors["ret"] = ACES_GREEN
+        aces_colors["fst"] = ACES_CYAN
+        aces_colors["spu"] = ACES_CYAN
+        aces_colors["dup"] = ACES_BLUE
+        aces_colors["out"] = ACES_BOLD
+        aces_colors["los"] = ACES_RED
+        aces_colors["alo"] = ACES_RED
+        aces_colors["ful"] = ACES_MAGENTA
+        aces_colors["wup"] = ACES_YELLOW
+        aces_colors["zro"] = ACES_BOLD
+        aces_colors["zrp"] = ACES_MAGENTA
+        aces_colors["zpa"] = ACES_YELLOW
+        aces_colors["kep"] = ACES_MAGENTA
+        aces_colors["kpa"] = ACES_YELLOW
+        aces_colors["tfo"] = ACES_BOLD
+        aces_colors["afo"] = ACES_MAGENTA
+        aces_colors["ifo"] = ACES_YELLOW
+        aces_colors["prt"] = ACES_BOLD
+        
+        if (analysis) {
+            i = 0
+            analysis_keys[i++] = "ret"
+            analysis_keys[i++] = "fst"
+            if (analysis_level >= 1)
+                analysis_keys[i++] = "spu"
+            analysis_keys[i++] = "dup"
+            analysis_keys[i++] = "out"
+            analysis_keys[i++] = "los"
+            analysis_keys[i++] = "alo"
+            analysis_keys[i++] = "ful"
+            analysis_keys[i++] = "wup"
+            analysis_keys[i++] = "zro"
+            analysis_keys[i++] = "zrp"
+            analysis_keys[i++] = "zpa"
+            analysis_keys[i++] = "kep"
+            analysis_keys[i++] = "kpa"
+            if (analysis_level >= 2)
+                analysis_keys[i++] = "tfo"
+            if (analysis_level >= 3) {
+                analysis_keys[i++] = "afo"
+                analysis_keys[i++] = "ifo"
+            }
+            analysis_keys[i++] = "prt"
+            analysis_num = i
+        }
+        
+        months["Jan"] = 1
+        months["Feb"] = 2
+        months["Mar"] = 3
+        months["Apr"] = 4
+        months["May"] = 5
+        months["Jun"] = 6
+        months["Jul"] = 7
+        months["Aug"] = 8
+        months["Sep"] = 9
+        months["Oct"] = 10
+        months["Nov"] = 11
+        months["Dec"] = 12
+    };
+    {
+        e_index           = $1
+        if (e_index >= max_streams) {
+            exceeded = 1
+            next
+        }
+        e_atime           = $2
+        e_rtime           = $3
+        e_srcport         = $4
+        e_dstport         = $5
+        e_srcaddr         = last_value($6)
+        e_dstaddr         = last_value($7)
+        e_srcaddr6        = last_value($8)
+        e_dstaddr6        = last_value($9)
+        e_flags["fin"]    = $10
+        e_flags["syn"]    = $11
+        e_flags["reset"]  = $12
+        e_flags["push"]   = $13
+        e_flags["ack"]    = $14
+        e_flags["urg"]    = $15
+        e_flags["ecn"]    = $16
+        e_flags["cwr"]    = $17
+        e_flags["ns"]     = $18
+        e_len             = $19
+        if (analysis) {
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                e_analysis[key] = $(20 + i)
+            }
+        }
+        else if (custom) {
+            if (custom_column == 0)
+                custom_column = 20
+            e_custom_val = $custom_column
+        }
+        else {
+            e_protocol = $20
+        }
+        
+        if (!indexes[e_index]) {
+            indexes[e_index] = 1
+            streams[e_index, "atime"]       = e_atime
+            streams[e_index, "rtime"]       = e_rtime
+            streams[e_index, "srcport"]     = e_srcport
+            streams[e_index, "dstport"]     = e_dstport
+            streams[e_index, "srcaddr"]     = e_srcaddr
+            streams[e_index, "dstaddr"]     = e_dstaddr
+            streams[e_index, "srcaddr6"]    = e_srcaddr6
+            streams[e_index, "dstaddr6"]    = e_dstaddr6
+            streams[e_index, "flags_fin"]   = 0
+            streams[e_index, "flags_syn"]   = 0
+            streams[e_index, "flags_reset"] = 0
+            streams[e_index, "flags_push"]  = 0
+            streams[e_index, "flags_ack"]   = 0
+            streams[e_index, "flags_urg"]   = 0
+            streams[e_index, "flags_ecn"]   = 0
+            streams[e_index, "flags_cwr"]   = 0
+            streams[e_index, "flags_ns"]    = 0
+            if (analysis) {
+                for (i = 0; i < analysis_num; i++) {
+                    key = analysis_keys[i]
+                    streams[e_index, key] = 0
+                }
+            }
+            else if (custom) {
+                streams[e_index, "l_custom_cnt"] = 0
+                streams[e_index, "r_custom_cnt"] = 0
+                streams[e_index, "l_custom_sum"] = 0
+                streams[e_index, "r_custom_sum"] = 0
+                streams[e_index, "l_custom_min"] = 0
+                streams[e_index, "r_custom_min"] = 0
+                streams[e_index, "l_custom_max"] = 0
+                streams[e_index, "r_custom_max"] = 0
+            }
+            else {
+                streams[e_index, "protocol_1st"] = ""
+                streams[e_index, "protocol_2nd"] = ""
+                streams[e_index, "protocol_3rd"] = ""
+                streams[e_index, "protocol_more"] = 0
+            }
+            streams[e_index, "l_packets"]    = 0
+            streams[e_index, "r_packets"]    = 0
+            streams[e_index, "l_bytes"]      = 0
+            streams[e_index, "r_bytes"]      = 0
+        }
+        streams[e_index, "last_rtime"] = e_rtime
+        
+        reverse = 0
+        if (e_srcport != streams[e_index, "srcport"] || e_srcaddr != streams[e_index, "srcaddr"] || e_srcaddr6 != streams[e_index, "srcaddr6"])
+            reverse = 1
+        
+        if (e_flags["fin"]   != "" && e_flags["fin"]   != 0) streams[e_index, "flags_fin"]   = 1
+        if (e_flags["syn"]   != "" && e_flags["syn"]   != 0) streams[e_index, "flags_syn"]   = 1
+        if (e_flags["reset"] != "" && e_flags["reset"] != 0) streams[e_index, "flags_reset"] = 1
+        if (e_flags["push"]  != "" && e_flags["push"]  != 0) streams[e_index, "flags_push"]  = 1
+        if (e_flags["ack"]   != "" && e_flags["ack"]   != 0) streams[e_index, "flags_ack"]   = 1
+        if (e_flags["urg"]   != "" && e_flags["urg"]   != 0) streams[e_index, "flags_urg"]   = 1
+        if (e_flags["ecn"]   != "" && e_flags["ecn"]   != 0) streams[e_index, "flags_ecn"]   = 1
+        if (e_flags["cwr"]   != "" && e_flags["cwr"]   != 0) streams[e_index, "flags_cwr"]   = 1
+        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) streams[e_index, "flags_ns"]    = 1
+        
+        if (analysis) {
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                if (e_analysis[key] != "" && e_analysis[key] != 0) streams[e_index, key]++
+            }
+        }
+        else if (custom) {
+            if (e_custom_val != "") {
+                if (reverse) {
+                    streams[e_index, "l_custom_cnt"]++
+                    if (custom_ftype != 0) {
+                        streams[e_index, "l_custom_sum"] += e_custom_val
+                        if (streams[e_index, "l_custom_cnt"] == 1 || e_custom_val < streams[e_index, "l_custom_min"])
+                            streams[e_index, "l_custom_min"] = e_custom_val
+                        if (streams[e_index, "l_custom_cnt"] == 1 || e_custom_val > streams[e_index, "l_custom_max"])
+                            streams[e_index, "l_custom_max"] = e_custom_val
+                    }
+                }
+                else {
+                    streams[e_index, "r_custom_cnt"]++
+                    if (custom_ftype != 0) {
+                        streams[e_index, "r_custom_sum"] += e_custom_val
+                        if (streams[e_index, "r_custom_cnt"] == 1 || e_custom_val < streams[e_index, "r_custom_min"])
+                            streams[e_index, "r_custom_min"] = e_custom_val
+                        if (streams[e_index, "r_custom_cnt"] == 1 || e_custom_val > streams[e_index, "r_custom_max"])
+                            streams[e_index, "r_custom_max"] = e_custom_val
+                    }
+                }
+            }
+        }
+        else {
+            if (e_protocol != "" && e_protocol != "TCP" && !streams[e_index, "protocol_more"]) {
+                if (e_protocol != streams[e_index, "protocol_1st"] && e_protocol != streams[e_index, "protocol_2nd"] && e_protocol != streams[e_index, "protocol_3rd"]) {
+                    if (streams[e_index, "protocol_1st"] == "")
+                        streams[e_index, "protocol_1st"] = e_protocol
+                    else if (streams[e_index, "protocol_2nd"] == "")
+                        streams[e_index, "protocol_2nd"] = e_protocol
+                    else if (streams[e_index, "protocol_3rd"] == "")
+                        streams[e_index, "protocol_3rd"] = e_protocol
+                    else
+                        streams[e_index, "protocol_more"] = 1
+                }
+            }
+        }
+        if (reverse) {
+            streams[e_index, "l_packets"]++
+            streams[e_index, "l_bytes"] += e_len
+        }
+        else {
+            streams[e_index, "r_packets"]++
+            streams[e_index, "r_bytes"] += e_len
+        }
+    };
+    END {
+        num = 0
+        if (descending)
+            PROCINFO["sorted_in"] = "compare_streams";
+        for (i in indexes) {
+            if (!indexes[i])
+                continue
+            num++
+            
+            #### Index ####
+            printf("%5d", i);
+            
+            #### TIME (0:a 1:ad 2:dd 3:e 4:r 5:rs) ####
+            if (time_type == 0) {
+                split(streams[i, "atime"], array1, " ")
+                split(array1[4], array4, ":")
+                printf("  %02d:%02d:%09.6f", array4[1], array4[2], array4[3])
+            }
+            else if (time_type == 1) {
+                split(streams[i, "atime"], array1, " ")
+                month_str = array1[1]
+                if (index(array1[1], "\"") > 0) {
+                    split(array1[1], array2, "\"")
+                    month_str = array2[2]
+                }
+                split(array1[2], array3, ",")
+                split(array1[4], array4, ":")
+                printf("  %04d-%02d-%02d %02d:%02d:%09.6f", array1[3], months[month_str], array3[1], array4[1], array4[2], array4[3])
+            }
+            else
+                printf("  %15.6f", streams[i, "rtime"])
+            
+            #### Src/Dst ADDRESS ####
+            if (streams[i, "srcaddr6"] != "") {
+                printf("  %s.%s %s<---->%s %s.%s\n", streams[i, "srcaddr6"], colored_port(streams[i, "srcport"]), ACES_GRAY, ACES_END, streams[i, "dstaddr6"], colored_port(streams[i, "dstport"]));
+                printf("     ");
+                if (time_type == 1)
+                    printf("                            ");
+                else
+                    printf("                 ");
+                if (streams[i, "srcaddr"] != "")
+                    printf("  %15s       %s<---->%s %15s      ", streams[i, "srcaddr"], ACES_GRAY, ACES_END, streams[i, "dstaddr"]);
+                else
+                    printf("                                                    ");
+            }
+            else {
+                printf("  %15s:%s %s<---->%s %15s:%s", streams[i, "srcaddr"], colored_port(streams[i, "srcport"]), ACES_GRAY, ACES_END, streams[i, "dstaddr"], colored_port(streams[i, "dstport"]));
+            }
+            
+            #### Duration ####
+            printf("  %14.6f", streams[i, "last_rtime"] - streams[i, "rtime"])
+            
+            #### FLAGS ####
+            printf("  [");
+            if (streams[i, "flags_fin"])   printf("%sF%s", aces_colors["fin"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_syn"])   printf("%sS%s", aces_colors["syn"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_reset"]) printf("%sR%s", aces_colors["reset"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_push"])  printf("%sP%s", aces_colors["push"],  ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ack"])   printf("%sA%s", aces_colors["ack"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_urg"])   printf("%sU%s", aces_colors["urg"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ecn"])   printf("%sE%s", aces_colors["ecn"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_cwr"])   printf("%sC%s", aces_colors["cwr"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ns"])    printf("%sN%s", aces_colors["ns"],    ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            printf("]");
+            
+            if (analysis) {
+                #### Analysis ####
+                printf(" ");
+                for (j = 0; j < analysis_num; j++) {
+                    key = analysis_keys[j]
+                    print_analysis(streams[i, key], aces_colors[key]);
+                }
+            }
+            else if (custom) {
+                #### Custom Statistics ####
+                print_statistics(streams[i, "l_custom_cnt"], streams[i, "l_custom_sum"], streams[i, "l_custom_min"], streams[i, "l_custom_max"]);
+                print_statistics(streams[i, "r_custom_cnt"], streams[i, "r_custom_sum"], streams[i, "r_custom_min"], streams[i, "r_custom_max"]);
+            }
+            else {
+                #### Protocol ####
+                protocol_label = streams[i, "protocol_1st"]
+                if (streams[i, "protocol_2nd"] != "")
+                    protocol_label = protocol_label ", " streams[i, "protocol_2nd"]
+                if (streams[i, "protocol_3rd"] != "")
+                    protocol_label = protocol_label ", " streams[i, "protocol_3rd"]
+                if (streams[i, "protocol_more"])
+                    protocol_label = protocol_label ", ..."
+                printf("  %-20s", protocol_label)
+                #### Packets Bytes ####
+                print_traffic(streams[i, "l_packets"], streams[i, "l_bytes"]);
+                print_traffic(streams[i, "r_packets"], streams[i, "r_bytes"]);
+            }
+            printf("\n");
+        }
+        if (num == 0) {
+            printf("WARNING: No such TCP stream.\n") > "/dev/stderr"
+            exit(1)
+        }
+        if (exceeded) {
+            printf("WARNING: Too many TCP streams.\n") > "/dev/stderr"
+            exit(1)
+        }
+        exit(0)
+    }'
+    
+    return $?
+}
+
+#==============================================================#
+# Function: Runs in flow mode                                  #
+#==============================================================#
+tcp_stream_flow()
+{
+    tshark_filter="tcp.stream == $STREAM_INDEX"
+    custom_column=0
+    custom_column2=0
+    
+    #==============================================#
+    # Finds the stream                             #
+    #==============================================#
+    printf "Finding stream...\r" 1>&2
+    tshark_fields="-e frame.time_relative \
+    -e tcp.srcport \
+    -e tcp.dstport \
+    -e ip.src \
+    -e ip.dst \
+    -e ipv6.src \
+    -e ipv6.dst \
+    -e eth.src \
+    -e eth.dst \
+    -e vlan.id"
+    if [ $DISPLAY_VENDOR -eq 1 ]; then
+        tshark_fields="$tshark_fields -e eth.src.oui_resolved -e eth.dst.oui_resolved"
+    fi
+    tshark_fields="$tshark_fields -e tcp.stream"  # dummy field for Cygwin
+    
+    line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$tshark_filter" -2 -c 1 -T fields $tshark_fields $TSHARK_FIND_OPTIONS`
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    if [ -z "$line" ]; then
+        printf "WARNING: No such TCP stream.\n" 1>&2
+        return 1
+    fi
+    first_rtime=`echo "$line" | cut -f 1`
+    srcport=`echo "$line" | cut -f 2`
+    dstport=`echo "$line" | cut -f 3`
+    srcaddr=`get_value "$line" 4`
+    dstaddr=`get_value "$line" 5`
+    srcaddr6=`get_value "$line" 6`
+    dstaddr6=`get_value "$line" 7`
+    srcmac=`echo "$line" | cut -f 8`
+    dstmac=`echo "$line" | cut -f 9`
+    vlanid=`echo "$line" | cut -f 10`
+    if [ $DISPLAY_VENDOR -eq 1 ]; then
+        srcvendor=`echo "$line" | cut -f 11`
+        dstvendor=`echo "$line" | cut -f 12`
+    fi
+    
+    if [ $FLAG_V -eq 1 ]; then
+        save="$srcport";  srcport="$dstport";   dstport="$save"
+        save="$srcaddr";  srcaddr="$dstaddr";   dstaddr="$save"
+        save="$srcaddr6"; srcaddr6="$dstaddr6"; dstaddr6="$save"
+        save="$srcmac";   srcmac="$dstmac";     dstmac="$save"
+        if [ $DISPLAY_VENDOR -eq 1 ]; then
+            save="$srcvendor"; srcvendor="$dstvendor"; dstvendor="$save"
+        fi
+    fi
+    
+    #==============================================#
+    # Builds tshark's fields list                  #
+    #==============================================#
+    if [ $TIME_TYPE -eq 0 -o $TIME_TYPE -eq 1 ]; then
+        time_field="frame.time"
+    elif [ $TIME_TYPE -eq 2 ]; then
+        time_field="frame.time_delta_displayed"
+    elif [ $TIME_TYPE -eq 3 ]; then
+        time_field="frame.time_epoch"
+    else
+        time_field="frame.time_relative"
+    fi
+    if [ $FLAG_W -eq 1 ]; then
+        window_field="tcp.window_size"
+    else
+        window_field="tcp.window_size_value"
+    fi
+    
+    tshark_fields="-e frame.number \
+    -e $time_field \
+    -e tcp.srcport \
+    -e tcp.dstport \
+    -e ip.src \
+    -e ipv6.src \
+    -e tcp.flags.fin \
+    -e tcp.flags.syn \
+    -e tcp.flags.reset \
+    -e tcp.flags.push \
+    -e tcp.flags.ack \
+    -e tcp.flags.urg \
+    -e tcp.flags.ecn \
+    -e tcp.flags.cwr \
+    -e tcp.flags.ns \
+    -e tcp.seq \
+    -e tcp.ack \
+    -e $window_field \
+    -e tcp.len \
+    -e tcp.option_kind"
+    if [ $ANALYSIS_LEVEL -le 1 ]; then
+        tshark_fields="$tshark_fields -e col.Protocol"
+    else
+        tshark_fields="$tshark_fields -e _ws.col.Protocol"
+    fi
+    
+    if [ $FLAG_Z -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
+        tshark_fields="$tshark_fields -e tcp.analysis.fast_retransmission"
+        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.spurious_retransmission"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.out_of_order"
+        tshark_fields="$tshark_fields -e tcp.analysis.lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.ack_lost_segment"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_full"
+        tshark_fields="$tshark_fields -e tcp.analysis.window_update"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe"
+        tshark_fields="$tshark_fields -e tcp.analysis.zero_window_probe_ack"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive"
+        tshark_fields="$tshark_fields -e tcp.analysis.keep_alive_ack"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_syn"
+        fi
+        if [ $ANALYSIS_LEVEL -ge 3 ]; then
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ack"
+            tshark_fields="$tshark_fields -e tcp.analysis.tfo_ignored"
+        fi
+        tshark_fields="$tshark_fields -e tcp.analysis.reused_ports"
+    fi
+    
+    if [ $FLAG_O -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.options.mss_val"
+        tshark_fields="$tshark_fields -e tcp.options.wscale.shift"
+        tshark_fields="$tshark_fields -e tcp.options.wscale.multiplier"
+        tshark_fields="$tshark_fields -e tcp.options.sack.count"
+        tshark_fields="$tshark_fields -e tcp.options.sack_le"
+        tshark_fields="$tshark_fields -e tcp.options.sack_re"
+        tshark_fields="$tshark_fields -e tcp.options.timestamp.tsval"
+        tshark_fields="$tshark_fields -e tcp.options.timestamp.tsecr"
+    elif [ $FLAG_X -eq 1 ]; then
+        tshark_fields="$tshark_fields -e tcp.payload"
+    elif [ $FLAG_F -eq 1 ]; then
+        duplicated=0
+        for field in $tshark_fields ; do
+            if [ $field = "-e" ]; then
+                continue
+            fi
+            custom_column=`expr $custom_column + 1`
+            if [ $field = "$CUSTOM_FIELD" ]; then
+                duplicated=1
+                break
+            fi
+        done
+        if [ $duplicated -eq 0 ]; then
+            custom_column=0
+            tshark_fields="$tshark_fields -e $CUSTOM_FIELD"
+        fi
+        if [ $FLAG_F2 -eq 1 ]; then
+            duplicated=0
+            for field in $tshark_fields ; do
+                if [ $field = "-e" ]; then
+                    continue
+                fi
+                custom_column2=`expr $custom_column2 + 1`
+                if [ $field = "$CUSTOM_FIELD2" ]; then
+                    duplicated=1
+                    break
+                fi
+            done
+            if [ $duplicated -eq 0 ]; then
+                custom_column2=0
+                tshark_fields="$tshark_fields -e $CUSTOM_FIELD2"
+            fi
+        fi
+    elif [ $FLAG_E -eq 1 ]; then
+        case $EXPERT_TYPE in
+            0) tshark_fields="$tshark_fields -e tcp.analysis.ack_rtt -e tcp.analysis.acks_frame";;
+            1) tshark_fields="$tshark_fields -e tcp.analysis.rto -e tcp.analysis.rto_frame";;
+            2) tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack_frame -e tcp.analysis.duplicate_ack_num";;
+        esac
+    else
+        if [ $ANALYSIS_LEVEL -le 1 ]; then
+            tshark_fields="$tshark_fields -e col.Info"
+        else
+            tshark_fields="$tshark_fields -e _ws.col.Info"
+        fi
+    fi
+    
+    #==============================================#
+    # Displays header information                  #
+    #==============================================#
+    if [ $FLAG_H -ne 1 ]; then
+        printf "========"
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "============================"
+        elif [ $TIME_TYPE -eq 3 ]; then
+            printf "==================="
+        else
+            printf "================="
+        fi
+        printf "================================================================="
+        printf "======="
+        printf "==============================="
+        printf "========"
+        printf "============"
+        if [ $FLAG_Z -eq 1 ]; then
+            printf "=========="
+        fi
+        if [ $FLAG_O -eq 1 ]; then
+            printf "==============="
+        elif [ $FLAG_X -eq 1 ]; then
+            printf "=================================================================="
+        elif [ $FLAG_F -eq 1 ]; then
+            printf "=============="
+        elif [ $FLAG_E -eq 1 ]; then
+            printf "============="
+        else
+            printf "============="
+        fi
+        printf "\n"
+        printf "TCP Stream flow\n"
+        printf "Filter: ${tshark_filter}\n"
+        if [ $FLAG_F -eq 1 ]; then
+            printf "CField: ${CUSTOM_FIELD}"
+            if [ $FLAG_F2 -eq 1 ]; then
+                printf " ${ACES_GRAY}(${ACES_END}${CUSTOM_FIELD2}${ACES_GRAY})${ACES_END}"
+            fi
+            printf "\n"
+        fi
+        if [ -n "$srcaddr6" ]; then
+            printf "Stream: ${ACES_BOLD}${srcaddr6}.${srcport}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr6}.${dstport}${ACES_END}\n"
+            if [ -n "$srcaddr" ]; then
+                printf "        ${ACES_BOLD}${srcaddr}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr}${ACES_END}\n"
+            fi
+        else
+            printf "Stream: ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
+        fi
+        if [ -n "$srcmac" -a -n "$dstmac" ]; then
+            if [ $DISPLAY_VENDOR -eq 1 ]; then
+                if [ -z "$srcvendor" ]; then
+                    srcvendor="Unknown"
+                fi
+                if [ -z "$dstvendor" ]; then
+                    dstvendor="Unknown"
+                fi
+                printf "        ${ACES_GRAY}${srcmac}(${srcvendor}), ${dstmac}(${dstvendor})${ACES_END}"
+            else
+                printf "        ${ACES_GRAY}${srcmac}, ${dstmac}${ACES_END}"
+            fi
+            if [ -n "$vlanid" ]; then
+                printf "  [vlan: ${ACES_BOLD}${vlanid}${ACES_END}]"
+            fi
+            printf "\n"
+        fi
+        printf "\n"
+        printf "     No."
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "                        TIME"
+        elif [ $TIME_TYPE -eq 3 ]; then
+            printf "               TIME"
+        else
+            printf "             TIME"
+        fi
+        printf "          TCP flow (WINDOW Size, Src/Dst PORT, LENGTH)           "
+        printf "FLAGS  "
+        printf "         SEQ/ACK Number        "
+        printf "  OPTION"
+        printf "  Protocol  "
+        if [ $FLAG_Z -eq 1 ]; then
+            printf "  Analysis"
+        fi
+        if [ $FLAG_O -eq 1 ]; then
+            printf "  Option VALUES"
+        elif [ $FLAG_X -eq 1 ]; then
+            printf "  Payload DATA                                                    "
+        elif [ $FLAG_F -eq 1 ]; then
+            printf "  Custom VALUE"
+        elif [ $FLAG_E -eq 1 ]; then
+            printf "  Expert INFO"
+        else
+            printf "  Information"
+        fi
+        printf "\n"
+        printf "========"
+        if [ $TIME_TYPE -eq 1 ]; then
+            printf "============================"
+        elif [ $TIME_TYPE -eq 3 ]; then
+            printf "==================="
+        else
+            printf "================="
+        fi
+        printf "================================================================="
+        printf "======="
+        printf "==============================="
+        printf "========"
+        printf "============"
+        if [ $FLAG_Z -eq 1 ]; then
+            printf "=========="
+        fi
+        if [ $FLAG_O -eq 1 ]; then
+            printf "==============="
+        elif [ $FLAG_X -eq 1 ]; then
+            printf "=================================================================="
+        elif [ $FLAG_F -eq 1 ]; then
+            printf "=============="
+        elif [ $FLAG_E -eq 1 ]; then
+            printf "============="
+        else
+            printf "============="
+        fi
+        printf "\n"
+    fi
+    
+    #==============================================#
+    # Executes tshark                              #
+    #==============================================#
+    printf "Now analyzing... \r" 1>&2
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -T fields $tshark_fields $TSHARK_MAIN_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
+                     -v time_type="$TIME_TYPE"           \
+                     -v first_rtime="$first_rtime"       \
+                     -v analysis="$FLAG_Z"               \
+                     -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v option="$FLAG_O"                 \
+                     -v hexdump="$FLAG_X"                \
+                     -v hexdump_length="$HEXDUMP_LENGTH" \
+                     -v custom="$FLAG_F"                 \
+                     -v custom_column="$custom_column"   \
+                     -v custom2="$FLAG_F2"               \
+                     -v custom_column2="$custom_column2" \
+                     -v expert="$FLAG_E"                 \
+                     -v expert_type="$EXPERT_TYPE"       \
+                     -v protoinfo_length="$MAX_INFOLEN"  \
+                     -v own_port="$srcport"              \
+                     -v own_ipaddr="$srcaddr"            \
+                     -v own_ipaddr6="$srcaddr6"          \
+                     -v appearance="$APPEARANCE" '
+    function last_value(e) {
+        if (e == "")
+            return ""
+        num = split(e, array, ",")
+        if (num == 0)
+            return ""
+        return array[num]
+    }
+    function ctoi(c) {
+        if (c == "a" || c == "A")      return 10
+        else if (c == "b" || c == "B") return 11
+        else if (c == "c" || c == "C") return 12
+        else if (c == "d" || c == "D") return 13
+        else if (c == "e" || c == "E") return 14
+        else if (c == "f" || c == "F") return 15
+        else                           return int(c)
+    }
+    function dump_data(payload) {
+        len = int(length(payload) / 2)
+        if (hexdump_length != 0 && hexdump_length < len)
+            len = hexdump_length
+        i = 0
+        while (i < len) {
+            if (i > 0) {
+                printf("\n")
+                #### No. ####
+                printf("        ")
+                #### TIME (0:a 1:ad 2:dd 3:e 4:r 5:rs) ####
+                if (time_type == 1)      printf("                            ")
+                else if (time_type == 3) printf("                   ")
+                else                     printf("                 ")
+                #### TCP flow (WINDOW Size, Src/Dst PORT, LENGTH) ####
+                printf("                       %s|                 |%s                       ", ACES_BOLD, ACES_END)
+                #### FLAGS ####
+                printf("        ")
+                #### SEQ/ACK Number ####
+                printf("                              ")
+                #### OPTION ####
+                printf("        ")
+                #### Protocol ####
+                printf("            ")
+                #### Analysis ####
+                if (analysis) printf("          ")
+            }
+            printf("  %s%05d:%s ", ACES_GRAY, i, ACES_END)
+            dump_str = ""
+            ascii_str = "    "
+            while (i < len) {
+                hex_char1 = substr(payload, i * 2 + 1, 1)
+                hex_char2 = substr(payload, i * 2 + 2, 1)
+                dump_str = dump_str hex_char1 hex_char2
+                dec = ctoi(hex_char1) * 16 + ctoi(hex_char2)
+                if (dec >= 32 && dec <= 126)
+                    ascii_str = ascii_str sprintf("%c", dec)
+                else
+                    ascii_str = ascii_str "."
+                i++
+                if (i >= len)
+                    break
+                if (i % 16 == 0)
+                    break
+                if (i % 8 == 0) {
+                    ascii_str = ascii_str " "
+                    dump_str = dump_str " "
+                }
+                if (i % 4 == 0)
+                    dump_str = dump_str " "
+            }
+            if (i % 16 != 0) {
+                j = 16 - (i % 16)
+                blank_num = j * 2 + int(j / 4) + int(j / 8)
+                while (blank_num > 0) {
+                   dump_str = dump_str " "
+                   blank_num--
+                }
+            }
+            printf("%s%s%s%s", dump_str, ACES_GRAY, ascii_str, ACES_END)
+        }
+    }
+    BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
+        FS = "\t"
+        analysis_num = 0
+        
+        ### ANSI Color Escape Sequences ###
+        if (appearance == 0) {
+            ACES_BOLD    = ""
+            ACES_RED     = ""
+            ACES_GREEN   = ""
+            ACES_YELLOW  = ""
+            ACES_BLUE    = ""
+            ACES_MAGENTA = ""
+            ACES_CYAN    = ""
+            ACES_GRAY    = ""
+            ACES_END     = ""
+        }
+        else if (appearance == 1) {
+            ACES_BOLD    = "\033[1;97m"
+            ACES_RED     = "\033[1;91m"
+            ACES_GREEN   = "\033[1;92m"
+            ACES_YELLOW  = "\033[1;93m"
+            ACES_BLUE    = "\033[1;94m"
+            ACES_MAGENTA = "\033[1;95m"
+            ACES_CYAN    = "\033[1;96m"
+            ACES_GRAY    = "\033[37m"
+            ACES_END     = "\033[0m"
+        }
+        else {
+            ACES_BOLD    = "\033[1;30m"
+            ACES_RED     = "\033[1;31m"
+            ACES_GREEN   = "\033[1;32m"
+            ACES_YELLOW  = "\033[1;33m"
+            ACES_BLUE    = "\033[1;34m"
+            ACES_MAGENTA = "\033[1;35m"
+            ACES_CYAN    = "\033[1;36m"
+            ACES_GRAY    = "\033[90m"
+            ACES_END     = "\033[0m"
+        }
+        
+        aces_colors["fin"]   = ACES_GREEN
+        aces_colors["syn"]   = ACES_CYAN
+        aces_colors["reset"] = ACES_RED
+        aces_colors["push"]  = ACES_BOLD
+        aces_colors["ack"]   = ACES_GRAY
+        aces_colors["urg"]   = ACES_MAGENTA
+        aces_colors["ecn"]   = ACES_YELLOW
+        aces_colors["cwr"]   = ACES_MAGENTA
+        aces_colors["ns"]    = ACES_YELLOW
+        
+        aces_colors["ret"] = ACES_GREEN
+        aces_colors["fst"] = ACES_CYAN
+        aces_colors["spu"] = ACES_CYAN
+        aces_colors["dup"] = ACES_BLUE
+        aces_colors["out"] = ACES_BOLD
+        aces_colors["los"] = ACES_RED
+        aces_colors["alo"] = ACES_RED
+        aces_colors["ful"] = ACES_MAGENTA
+        aces_colors["wup"] = ACES_YELLOW
+        aces_colors["zro"] = ACES_BOLD
+        aces_colors["zrp"] = ACES_MAGENTA
+        aces_colors["zpa"] = ACES_YELLOW
+        aces_colors["kep"] = ACES_MAGENTA
+        aces_colors["kpa"] = ACES_YELLOW
+        aces_colors["tfo"] = ACES_BOLD
+        aces_colors["afo"] = ACES_MAGENTA
+        aces_colors["ifo"] = ACES_YELLOW
+        aces_colors["prt"] = ACES_BOLD
+        
+        if (analysis) {
+            i = 0
+            analysis_keys[i++] = "ret"
+            analysis_keys[i++] = "fst"
+            if (analysis_level >= 1)
+                analysis_keys[i++] = "spu"
+            analysis_keys[i++] = "dup"
+            analysis_keys[i++] = "out"
+            analysis_keys[i++] = "los"
+            analysis_keys[i++] = "alo"
+            analysis_keys[i++] = "ful"
+            analysis_keys[i++] = "wup"
+            analysis_keys[i++] = "zro"
+            analysis_keys[i++] = "zrp"
+            analysis_keys[i++] = "zpa"
+            analysis_keys[i++] = "kep"
+            analysis_keys[i++] = "kpa"
+            if (analysis_level >= 2)
+                analysis_keys[i++] = "tfo"
+            if (analysis_level >= 3) {
+                analysis_keys[i++] = "afo"
+                analysis_keys[i++] = "ifo"
+            }
+            analysis_keys[i++] = "prt"
+            analysis_num = i
+        }
+        
+        months["Jan"] = 1
+        months["Feb"] = 2
+        months["Mar"] = 3
+        months["Apr"] = 4
+        months["May"] = 5
+        months["Jun"] = 6
+        months["Jul"] = 7
+        months["Aug"] = 8
+        months["Sep"] = 9
+        months["Oct"] = 10
+        months["Nov"] = 11
+        months["Dec"] = 12
+    };
+    {
+        e_number              = $1
+        e_time                = $2
+        e_srcport             = $3
+        e_dstport             = $4
+        e_srcaddr             = last_value($5)
+        e_srcaddr6            = last_value($6)
+        e_flags["fin"]        = $7
+        e_flags["syn"]        = $8
+        e_flags["reset"]      = $9
+        e_flags["push"]       = $10
+        e_flags["ack"]        = $11
+        e_flags["urg"]        = $12
+        e_flags["ecn"]        = $13
+        e_flags["cwr"]        = $14
+        e_flags["ns"]         = $15
+        e_seq                 = $16
+        e_ack                 = $17
+        e_window_size         = $18
+        e_len                 = $19
+        e_option_kind         = $20
+        e_protocol            = $21
+        if (analysis) {
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                e_analysis[key] = $(22 + i)
+            }
+        }
+        if (option) {
+            e_options["mss"]      = $(22 + analysis_num)
+            e_options["ws_shift"] = $(23 + analysis_num)
+            e_options["ws_multi"] = $(24 + analysis_num)
+            e_options["sack_cnt"] = $(25 + analysis_num)
+            e_options["sack_le"]  = $(26 + analysis_num)
+            e_options["sack_re"]  = $(27 + analysis_num)
+            e_options["ts_val"]   = $(28 + analysis_num)
+            e_options["ts_ecr"]   = $(29 + analysis_num)
+        }
+        else if (hexdump) {
+            e_payload = $(22 + analysis_num)
+        }
+        else if (custom) {
+            if (custom2) {
+                if (custom_column2 == 0) {
+                    if (custom_column == 0)
+                        custom_column2 = 23 + analysis_num
+                    else
+                        custom_column2 = 22 + analysis_num
+                }
+                e_custom_val2 = $custom_column2
+            }
+            if (custom_column == 0)
+                custom_column = 22 + analysis_num
+            e_custom_val = $custom_column
+        }
+        else if (expert) {
+            e_expert_val1 = $(22 + analysis_num)
+            e_expert_val2 = $(23 + analysis_num)
+        }
+        else {
+            e_information = $(22 + analysis_num)
+        }
+        
+        #### No. ####
+        printf("%8d", e_number)
+        
+        #### TIME (0:a 1:ad 2:dd 3:e 4:r 5:rs) ####
+        if (time_type == 0) {
+            split(e_time, array1, " ")
+            split(array1[4], array4, ":")
+            printf("  %02d:%02d:%09.6f", array4[1], array4[2], array4[3])
+        }
+        else if (time_type == 1) {
+            split(e_time, array1, " ")
+            month_str = array1[1]
+            if (index(array1[1], "\"") > 0) {
+                split(array1[1], array2, "\"")
+                month_str = array2[2]
+            }
+            split(array1[2], array3, ",")
+            split(array1[4], array4, ":")
+            printf("  %04d-%02d-%02d %02d:%02d:%09.6f", array1[3], months[month_str], array3[1], array4[1], array4[2], array4[3])
+        }
+        else if (time_type == 3) {
+            printf("  %17.6f", e_time)
+        }
+        else if (time_type == 5) {
+            printf("  %15.6f", e_time - first_rtime)
+        }
+        else
+            printf("  %15.6f", e_time)
+        
+        #### TCP flow (WINDOW Size, Src/Dst PORT, LENGTH) ####
+        reverse = 0
+        if (e_srcport != own_port || e_srcaddr != own_ipaddr || e_srcaddr6 != own_ipaddr6)
+            reverse = 1
+        
+        window_label = "[Win=" e_window_size "]"
+        dstport_label = "(" e_dstport ")"
+        srcport_label = "(" e_srcport ")"
+        if (e_len == "")       len_label = "-----"
+        else if (e_len > 9999) len_label = e_len
+        else if (e_len > 999)  len_label = "-" e_len
+        else if (e_len > 99)   len_label = "--" e_len
+        else if (e_len > 9)    len_label = "---" e_len
+        else if (e_len > 0)    len_label = "----" e_len
+        else                   len_label = "-----"
+        if (reverse) {
+            printf("%s%23s%s", ACES_GRAY, dstport_label, ACES_END)
+            printf("%s|%s%s<----%s-------%s%s|%s", ACES_BOLD, ACES_END, ACES_BLUE, len_label, ACES_END, ACES_BOLD, ACES_END)
+            if (e_srcport > 9999)     printf("%s%s%s%-16s", ACES_GRAY, srcport_label, ACES_END, window_label)
+            else if (e_srcport > 999) printf("%s%s%s%-17s", ACES_GRAY, srcport_label, ACES_END, window_label)
+            else if (e_srcport > 99)  printf("%s%s%s%-18s", ACES_GRAY, srcport_label, ACES_END, window_label)
+            else if (e_srcport > 9)   printf("%s%s%s%-19s", ACES_GRAY, srcport_label, ACES_END, window_label)
+            else                      printf("%s%s%s%-20s", ACES_GRAY, srcport_label, ACES_END, window_label)
+        }
+        else {
+            if (e_srcport > 9999)     printf("%16s%s%s%s", window_label, ACES_GRAY, srcport_label, ACES_END)
+            else if (e_srcport > 999) printf("%17s%s%s%s", window_label, ACES_GRAY, srcport_label, ACES_END)
+            else if (e_srcport > 99)  printf("%18s%s%s%s", window_label, ACES_GRAY, srcport_label, ACES_END)
+            else if (e_srcport > 9)   printf("%19s%s%s%s", window_label, ACES_GRAY, srcport_label, ACES_END)
+            else                      printf("%20s%s%s%s", window_label, ACES_GRAY, srcport_label, ACES_END)
+            printf("%s|-----%s------>|%s", ACES_BOLD, len_label, ACES_END);
+            printf("%s%-23s%s", ACES_GRAY, dstport_label, ACES_END)
+        }
+        
+        #### FLAGS ####
+        cnt = 0
+        flags_label = "["
+        if (e_flags["fin"]   != "" && e_flags["fin"]   != 0) { cnt++; flags_label = flags_label aces_colors["fin"]   "F" ACES_END }
+        if (e_flags["syn"]   != "" && e_flags["syn"]   != 0) { cnt++; flags_label = flags_label aces_colors["syn"]   "S" ACES_END }
+        if (e_flags["reset"] != "" && e_flags["reset"] != 0) { cnt++; flags_label = flags_label aces_colors["reset"] "R" ACES_END }
+        if (e_flags["push"]  != "" && e_flags["push"]  != 0) { cnt++; flags_label = flags_label aces_colors["push"]  "P" ACES_END }
+        if (e_flags["ack"]   != "" && e_flags["ack"]   != 0) { cnt++; flags_label = flags_label aces_colors["ack"]   "A" ACES_END }
+        if (e_flags["urg"]   != "" && e_flags["urg"]   != 0) { cnt++; flags_label = flags_label aces_colors["urg"]   "U" ACES_END }
+        if (e_flags["ecn"]   != "" && e_flags["ecn"]   != 0) { cnt++; flags_label = flags_label aces_colors["ecn"]   "E" ACES_END }
+        if (e_flags["cwr"]   != "" && e_flags["cwr"]   != 0) { cnt++; flags_label = flags_label aces_colors["cwr"]   "C" ACES_END }
+        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) { cnt++; flags_label = flags_label aces_colors["ns"]    "N" ACES_END }
+        if (cnt == 0)      flags_label = flags_label "]      "
+        else if (cnt == 1) flags_label = flags_label "]     "
+        else if (cnt == 2) flags_label = flags_label "]    "
+        else if (cnt == 3) flags_label = flags_label "]   "
+        else if (cnt == 4) flags_label = flags_label "]  "
+        else if (cnt == 5) flags_label = flags_label "] "
+        else               flags_label = flags_label "]"
+        printf("%s", flags_label);
+        
+        #### SEQ/ACK Number ####
+        if (reverse) {
+            if (e_flags["ack"] == "" || e_flags["ack"] == 0 || e_ack == "")
+                printf("              ");
+            else
+                printf("Ack=%-10u", e_ack);
+            if (e_seq == "")
+                printf("                ");
+            else
+                printf("  Seq=%-10u", e_seq);
+        }
+        else {
+            if (e_seq == "")
+                printf("              ");
+            else
+                printf("Seq=%-10u", e_seq);
+            if (e_flags["ack"] == "" || e_flags["ack"] == 0 || e_ack == "")
+                printf("                ");
+            else
+                printf("  Ack=%-10u", e_ack);
+        }
+        
+        #### OPTION ####
+        optset["eol"]      = 0
+        optset["nop"]      = 0
+        optset["mss"]      = 0
+        optset["wscale"]   = 0
+        optset["sackperm"] = 0
+        optset["sack"]     = 0
+        optset["tstamp"]   = 0
+        optset["other"]    = 0
+        other_kinds        = ""
+        opt_num = split(e_option_kind, array3, ",")
+        for (i = 1; i <= opt_num; i++) {
+            if (array3[i] == "0")      optset["eol"]      = 1
+            else if (array3[i] == "1") optset["nop"]      = 1
+            else if (array3[i] == "2") optset["mss"]      = 1
+            else if (array3[i] == "3") optset["wscale"]   = 1
+            else if (array3[i] == "4") optset["sackperm"] = 1
+            else if (array3[i] == "5") optset["sack"]     = 1
+            else if (array3[i] == "8") optset["tstamp"]   = 1
+            else {
+                if (!optset["other"])
+                    other_kinds = array3[i]
+                else
+                    other_kinds = other_kinds "," array3[i]
+                optset["other"] = 1
+            }
+        }
+        if (optset["mss"])      opt_label = "m";           else opt_label = ACES_GRAY "-" ACES_END;
+        if (optset["wscale"])   opt_label = opt_label "w"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        if (optset["sackperm"]) opt_label = opt_label "S"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        if (optset["sack"])     opt_label = opt_label "s"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        if (optset["tstamp"])   opt_label = opt_label "t"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        if (optset["other"])    opt_label = opt_label ACES_RED "O" ACES_END; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        printf("  %s", opt_label);
+        
+        #### Protocol ####
+        if (e_protocol != "TCP")
+            printf("  %-10s", e_protocol)
+        else
+            printf("            ")
+        
+        #### Analysis ####
+        if (analysis) {
+            printf("  ");
+            cnt = 0
+            for (i = 0; i < analysis_num; i++) {
+                key = analysis_keys[i]
+                if (e_analysis[key] != "" && e_analysis[key] != 0) {
+                    if (cnt > 0)
+                        printf("%s,%s", ACES_GRAY, ACES_END);
+                    printf("%s%s%s", aces_colors[key], key, ACES_END);
+                    cnt++
+                }
+            }
+            if (cnt == 0)      printf("        ");
+            else if (cnt == 1) printf("     ");
+            else if (cnt == 2) printf(" ");
+        }
+        
+        if (option) {
+            #### Option VALUES ####
+            printf("  ")
+            if (optset["mss"])      printf("MSS=%d ", e_options["mss"]);
+            if (optset["wscale"])   printf("WS=%d(%d) ", e_options["ws_shift"], e_options["ws_multi"]);
+            if (optset["sackperm"]) printf("SACK_PERM=1 ");
+            if (optset["sack"])     printf("SLE=%u SRE=%u ", e_options["sack_le"], e_options["sack_re"]);
+            if (optset["tstamp"]) {
+                if (reverse == 0)   printf("TSval=%d TSecr=%d ", e_options["ts_val"], e_options["ts_ecr"]);
+                else                printf("TSecr=%d TSval=%d ", e_options["ts_ecr"], e_options["ts_val"]);
+            }
+            if (optset["other"])    printf("OTHER(kind:%s)", other_kinds);
+        }
+        else if (hexdump) {
+            #### Payload DATA ####
+            gsub(":", "", e_payload)  # for wireshark 2.x
+            dump_data(e_payload)
+        }
+        else if (custom) {
+            #### Custom VALUE ####
+            printf("  %s", e_custom_val)
+            if (custom2 && e_custom_val2 != "")
+                printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
+        }
+        else if (expert) {
+            #### Expert INFO ####
+            if (expert_type == 0) {
+                if (e_expert_val1 != "" && e_expert_val2 != "")
+                    printf("  %.6f %ssec (ack to %s%s%s)%s", e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
+            }
+            else if (expert_type == 1) {
+                if (e_expert_val1 != "" && e_expert_val2 != "")
+                    printf("  %.6f %ssec (from %s%s%s)%s", e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
+            }
+            else if (expert_type == 2) {
+                if (e_expert_val1 != "" && e_expert_val2 != "")
+                    printf("  %sDuplicate of%s %s %s(#%s%s%s)%s", ACES_GRAY, ACES_END, e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
+            }
+        }
+        else {
+            #### Information ####
+            if (e_protocol != "TCP") {
+                protocol_information = e_information
+                if (protoinfo_length > 0 && length(e_information) > protoinfo_length)
+                    protocol_information = substr(e_information, 1, protoinfo_length) "..."
+                printf("  %s", protocol_information)
+            }
+        }
+        printf("\n")
+    };
+    END {
+        exit(0)
+    }'
+    
+    return $?
+}
+
+#==============================================================#
+# Function: Runs in one mode                                   #
+#==============================================================#
+tcp_stream_one()
+{
+    tshark_filter="frame.number == $FRAME_NUMBER"
+    
+    #==============================================#
+    # Dummy search to check frame number           #
+    #==============================================#
+    printf "Finding packet...\r" 1>&2
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$tshark_filter" -c 1 $TSHARK_FIND_OPTIONS > /dev/null
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    #==============================================#
+    # Executes tshark                              #
+    #==============================================#
+    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$tshark_filter" -c $FRAME_NUMBER -V $TSHARK_MAIN_OPTIONS | \
+      "$AWK_COMMAND" -v os_type="$OS_TYPE" \
+                     -v appearance="$APPEARANCE" '
+    BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
+        line_num = 0
+        
+        ### ANSI Color Escape Sequences ###
+        if (appearance == 0) {
+            ACES_BGGRAY  = ""
+            ACES_BOLD    = ""
+            ACES_RED     = ""
+            ACES_GREEN   = ""
+            ACES_YELLOW  = ""
+            ACES_BLUE    = ""
+            ACES_MAGENTA = ""
+            ACES_CYAN    = ""
+            ACES_GRAY    = ""
+            ACES_END     = ""
+        }
+        else if (appearance == 1) {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;97m"
+            ACES_RED     = "\033[1;91m"
+            ACES_GREEN   = "\033[1;92m"
+            ACES_YELLOW  = "\033[1;93m"
+            ACES_BLUE    = "\033[1;94m"
+            ACES_MAGENTA = "\033[1;95m"
+            ACES_CYAN    = "\033[1;96m"
+            ACES_GRAY    = "\033[37m"
+            ACES_END     = "\033[0m"
+        }
+        else {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;30m"
+            ACES_RED     = "\033[1;31m"
+            ACES_GREEN   = "\033[1;32m"
+            ACES_YELLOW  = "\033[1;33m"
+            ACES_BLUE    = "\033[1;34m"
+            ACES_MAGENTA = "\033[1;35m"
+            ACES_CYAN    = "\033[1;36m"
+            ACES_GRAY    = "\033[90m"
+            ACES_END     = "\033[0m"
+        }
+        
+        tcpindex_label = "Stream index"
+        tcplen_label   = "TCP Segment Len"
+        tcpopt_label   = "TCP Option"
+        
+        flag_labels["fin"]   = "Fin"
+        flag_labels["syn"]   = "Syn"
+        flag_labels["reset"] = "Reset"
+        flag_labels["push"]  = "Push"
+        flag_labels["ack"]   = "Acknowledgment"
+        flag_labels["urg"]   = "Urgent"
+        flag_labels["ecn"]   = "ECN-Echo"
+        flag_labels["cwr"]   = "Congestion Window Reduced (CWR)"
+        flag_labels["ns"]    = "Nonce"
+        flag_labels["res"]   = "Reserved"
+        
+        aces_colors["fin"]   = ACES_GREEN
+        aces_colors["syn"]   = ACES_CYAN
+        aces_colors["reset"] = ACES_RED
+        aces_colors["push"]  = ACES_BOLD
+        aces_colors["ack"]   = ACES_GRAY
+        aces_colors["urg"]   = ACES_MAGENTA
+        aces_colors["ecn"]   = ACES_YELLOW
+        aces_colors["cwr"]   = ACES_MAGENTA
+        aces_colors["ns"]    = ACES_YELLOW
+        aces_colors["res"]   = ACES_RED
+        
+        option_labels["nop"]       = "No-Operation (NOP)"
+        option_labels["eol"]       = "End of Option List (EOL)"
+        option_labels["timestamp"] = "Timestamps"
+        option_labels["mss"]       = "Maximum segment size"
+        option_labels["wscale"]    = "Window scale"
+        option_labels["sack_perm"] = "SACK permitted"
+        option_labels["sack"]      = "SACK"
+        
+        analysis_msgs["ret"] = "This frame is a (suspected) retransmission"
+        analysis_msgs["fst"] = "This frame is a (suspected) fast retransmission"
+        analysis_msgs["spu"] = "This frame is a (suspected) spurious retransmission"
+        analysis_msgs["dup"] = "Duplicate ACK"
+        analysis_msgs["out"] = "This frame is a (suspected) out-of-order segment"
+        analysis_msgs["los"] = "Previous segment(s) not captured (common at capture start)"
+        analysis_msgs["alo"] = "ACKed segment that wasn\047t captured (common at capture start)"
+        analysis_msgs["ful"] = "TCP window specified by the receiver is now completely full"
+        analysis_msgs["wup"] = "TCP window update"
+        analysis_msgs["zro"] = "TCP Zero Window segment"
+        analysis_msgs["zrp"] = "TCP Zero Window Probe"
+        analysis_msgs["zpa"] = "ACK to a TCP Zero Window Probe"
+        analysis_msgs["kep"] = "TCP keep-alive segment"
+        analysis_msgs["kpa"] = "ACK to a TCP keep-alive segment"
+        analysis_msgs["tfo"] = "TCP SYN with TFO Cookie"
+        analysis_msgs["afo"] = "TCP SYN-ACK accepting TFO data"
+        analysis_msgs["ifo"] = "TCP SYN-ACK ignoring TFO data"
+        analysis_msgs["prt"] = "A new tcp session is started with the same ports as an earlier session in this trace"
+        
+        aces_colors["ret"] = ACES_GREEN
+        aces_colors["fst"] = ACES_CYAN
+        aces_colors["spu"] = ACES_CYAN
+        aces_colors["dup"] = ACES_BLUE
+        aces_colors["out"] = ACES_BOLD
+        aces_colors["los"] = ACES_RED
+        aces_colors["alo"] = ACES_RED
+        aces_colors["ful"] = ACES_MAGENTA
+        aces_colors["wup"] = ACES_YELLOW
+        aces_colors["zro"] = ACES_BOLD
+        aces_colors["zrp"] = ACES_MAGENTA
+        aces_colors["zpa"] = ACES_YELLOW
+        aces_colors["kep"] = ACES_MAGENTA
+        aces_colors["kpa"] = ACES_YELLOW
+        aces_colors["tfo"] = ACES_BOLD
+        aces_colors["afo"] = ACES_MAGENTA
+        aces_colors["ifo"] = ACES_YELLOW
+        aces_colors["prt"] = ACES_BOLD
+    };
+    {
+        line = $0
+        len = length(line)
+        
+        if (len == 0) {
+            printf("\n")
+            next
+        }
+        line_num++
+        
+        if (substr(line, 1, 1) != " ") {
+            printf("%s%s %s\n", ACES_BGGRAY, line, ACES_END)
+            next
+        }
+        for (key in flag_labels) {
+            label = " = " flag_labels[key] ": Set"
+            if (index(line, label) > 0) {
+               printf("%s%s%s\n", aces_colors[key], line, ACES_END)
+               next
+            }
+            label = " = " flag_labels[key] ": Not set"
+            if (index(line, label) > 0) {
+               printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+               next
+            }
+        }
+        label = tcpopt_label " - "
+        if (index(line, label) > 0) {
+            for (key in option_labels) {
+                label = tcpopt_label " - " option_labels[key]
+                if (index(line, label) > 0) {
+                    printf("%s\n", line)
+                    next
+                }
+            }
+            printf("%s%s%s\n", ACES_RED, line, ACES_END)
+            next
+        }
+        for (key in analysis_msgs) {
+            label = "[" analysis_msgs[key] "]"
+            ptr = index(line, label)
+            if (ptr > 0) {
+               msg_len = length(analysis_msgs[key])
+               printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, aces_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
+               next
+            }
+        }
+        if (substr(line, 1, 8) == "        ") {
+            printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+            next
+        }
+        if (substr(line, len, 1) == "]") {
+            label = "[" tcplen_label ": "
+            ptr = index(line, label)
+            if (ptr > 0) {
+                ptr += length(label)
+                len_len = length(line) - ptr
+                printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
+                next
+            }
+            label = "[" tcpindex_label ": "
+            ptr = index(line, label)
+            if (ptr > 0) {
+                ptr += length(label)
+                len_len = length(line) - ptr
+                printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
+                next
+            }
+            ptr = index(line, "[")
+            if (ptr > 0) {
+                printf("%s%s%s%s\n", substr(line, 1, ptr - 1), ACES_GRAY, substr(line, ptr), ACES_END)
+                next
+            }
+        }
+        printf("%s\n", line)
+    };
+    END {
+        if (line_num == 0) {
+            printf("WARNING: No such packet.\n") > "/dev/stderr"
+            exit(1)
+        }
+        exit(0)
+    }'
+    
+    return $?
+}
+
+#==============================================================#
+# Global variables                                             #
+#==============================================================#
+OS_TYPE=0   # 0:Linux, 1:SunOS, 2:Darwin, 3:Cygwin
+
+PRE_COMMAND=""
+TSHARK_COMMAND="tshark"
+AWK_COMMAND="awk"
+GREP_COMMAND="grep"
+MAX_STREAMS=$MAX_STREAMS_DEFAULT
+MAX_INFOLEN=$MAX_INFOLEN_DEFAULT
+APPEARANCE=$APPEARANCE_DEFAULT   # 0:Colorless, 1:Dark(default), 2:Light
+
+FLAG_H=0
+FLAG_C=0
+FLAG_4=0
+FLAG_6=0
+FLAG_D=0
+FLAG_V=0
+FLAG_W=0
+FLAG_Q=0
+FLAG_Z=0
+FLAG_R=0
+FLAG_S=0
+FLAG_T=0
+FLAG_P=0
+FLAG_A=0
+FLAG_O=0
+FLAG_X=0
+FLAG_F=0
+FLAG_F2=0
+FLAG_E=0
+FLAG_N=0
+
+HEXDUMP_LENGTH=0
+ANALYSIS_LEVEL=0
+DISPLAY_VENDOR=0
+EXPERT_TYPE=0
+TSHARK_INFILE=""
+TSHARK_FIND_OPTIONS=""
+TSHARK_MAIN_OPTIONS=""
+CUSTOM_FIELD=""
+CUSTOM_FIELD2=""
+TIME_TYPE=0
+FILTER_PORT=0
+FILTER_ADDR=""
+STREAM_INDEX=0
+FRAME_NUMBER=0
+
+ACES_BOLD=""
+ACES_RED=""
+ACES_GREEN=""
+ACES_YELLOW=""
+ACES_BLUE=""
+ACES_MAGENTA=""
+ACES_CYAN=""
+ACES_GRAY=""
+ACES_END=""
+
+#==============================================================#
+# Checks OS type                                               #
+#==============================================================#
+platform=`uname -s`
+case $platform in
+    Linux*)
+        OS_TYPE=0
+        ;;
+    SunOS*)
+        OS_TYPE=1
+        which gawk > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            AWK_COMMAND="gawk"
+        else
+            which nawk > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                AWK_COMMAND="nawk"
+            fi
+        fi
+        which ggrep > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            GREP_COMMAND="ggrep"
+        else
+            if [ -x "/usr/xpg4/bin/grep" ]; then
+                GREP_COMMAND="/usr/xpg4/bin/grep"
+            fi
+        fi
+        ;;
+    Darwin*)
+        OS_TYPE=2
+        ;;
+    CYGWIN*)
+        OS_TYPE=3
+        ;;
+    *)
+        printf "ERROR: platform not supported (${platform}).\n" 1>&2
+        exit 1
+        ;;
+esac
+
+#==============================================================#
+# Gets options                                                 #
+#==============================================================#
+while getopts "HC46dvwqzohVr:s:n:t:p:a:x:f:e:" flag; do
+    case $flag in
+        \?) usage;;
+        H) FLAG_H=1;;
+        C) FLAG_C=1; APPEARANCE=0;;
+        4) FLAG_4=1;;
+        6) FLAG_6=1;;
+        d) FLAG_D=1;;
+        v) FLAG_V=1;;
+        w) FLAG_W=1;;
+        q) FLAG_Q=1;;
+        z) FLAG_Z=1;;
+        o) FLAG_O=1;;
+        h) print_help;;
+        V) print_version;;
+        r) FLAG_R=1; TSHARK_INFILE="$OPTARG";;
+        s) FLAG_S=1; STREAM_INDEX=$OPTARG;;
+        n) FLAG_N=1; FRAME_NUMBER=$OPTARG;;
+        t) FLAG_T=1
+            case $OPTARG in
+                "a")  TIME_TYPE=0;;
+                "ad") TIME_TYPE=1;;
+                "dd") TIME_TYPE=2;;
+                "e")  TIME_TYPE=3;;
+                "r")  TIME_TYPE=4;;
+                "rs") TIME_TYPE=5;;
+                *)    usage;;
+            esac
+            ;;
+        p) FLAG_P=1; FILTER_PORT=$OPTARG;;
+        a) FLAG_A=1; FILTER_ADDR=$OPTARG;;
+        x) FLAG_X=1; HEXDUMP_LENGTH=$OPTARG;;
+        f) FLAG_F=1
+            if [ -z "$CUSTOM_FIELD" ]; then
+                CUSTOM_FIELD=$OPTARG
+            elif [ -z "$CUSTOM_FIELD2" -a $CUSTOM_FIELD != $OPTARG ]; then
+                FLAG_F2=1
+                CUSTOM_FIELD2=$OPTARG
+            fi
+            ;;
+        e) FLAG_E=1
+            case $OPTARG in
+                "rtt") EXPERT_TYPE=0;;
+                "rto") EXPERT_TYPE=1;;
+                "dup") EXPERT_TYPE=2;;
+                *)     usage;;
+            esac
+            ;;
+    esac
+done
+
+shift `expr $OPTIND - 1`
+if [ -n "$1" ]; then
+    printf "ERROR: Invalid argument ($1).\n" 1>&2
+    usage
+fi
+
+#==============================================================#
+# Checks parameter                                             #
+#==============================================================#
+if [ $FLAG_R -eq 0 ]; then
+    usage
+fi
+
+if [ $FLAG_S -eq 1 ]; then
+    #### flow mode ####
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_N -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_O -eq 1 ]; then
+        if [ $FLAG_X -eq 1 -o $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
+            usage
+        fi
+    fi
+    if [ $FLAG_X -eq 1 ]; then
+        if [ $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
+            usage
+        fi
+    fi
+    if [ $FLAG_F -eq 1 -a $FLAG_E -eq 1 ]; then
+        usage
+    fi
+elif [ $FLAG_N -eq 1 ]; then
+    #### one mode ####
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_H -eq 1 -o $FLAG_T -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_F -eq 1 ]; then
+        usage
+    fi
+else
+    #### list mode ####
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+        usage
+    fi
+    if [ $TIME_TYPE -eq 2 -o $TIME_TYPE -eq 3 -o $TIME_TYPE -eq 5 ]; then
+        usage
+    fi
+    if [ $FLAG_4 -eq 1 -a $FLAG_6 -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_4 -eq 1 -a $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_6 -eq 1 -a $FLAG_A -eq 1 ]; then
+        usage
+    fi
+    if [ $FLAG_Z -eq 1 -a $FLAG_F -eq 1 ]; then
+        usage
+    fi
+fi
+
+if [ $FLAG_D -eq 1 -a $OS_TYPE -ne 0 ]; then
+    usage
+fi
+
+if [ $FLAG_X -eq 1 ]; then
+    check_length $HEXDUMP_LENGTH
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Invalid data length (${HEXDUMP_LENGTH}).\n" 1>&2
+        exit 1
+    fi
+fi
+
+#==============================================================#
+# Checks package installation & enviroment variables           #
+#==============================================================#
+if [ -n "$TCPSHARK_TSHARK_COMMAND" ]; then
+    if [ ! -x "$TCPSHARK_TSHARK_COMMAND" ]; then
+        printf "ERROR: Invalid enviroment variable (TCPSHARK_TSHARK_COMMAND).\n" 1>&2
+        exit 1
+    fi
+    TSHARK_COMMAND="$TCPSHARK_TSHARK_COMMAND"
+else
+    which "$TSHARK_COMMAND" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        printf "ERROR: ${TSHARK_COMMAND} not found.\n" 1>&2
+        exit 1
+    fi
+fi
+
+if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
+    if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
+        if [ `whoami` = 'root' ]; then
+            PRE_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER"
+            $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+        fi
+    fi
+fi
+
+if [ -n "$TCPSHARK_MAX_STREAMS" ]; then
+    check_streams $TCPSHARK_MAX_STREAMS
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Invalid enviroment variable (TCPSHARK_MAX_STREAMS).\n" 1>&2
+        exit 1
+    fi
+    MAX_STREAMS=$TCPSHARK_MAX_STREAMS
+fi
+
+if [ -n "$TCPSHARK_APPEARANCE" -a $FLAG_C -eq 0 ]; then
+    case $TCPSHARK_APPEARANCE in
+        dark|Dark|DARK)
+            APPEARANCE=1
+            ;;
+        light|Light|Light)
+            APPEARANCE=2
+            ;;
+        *)
+            printf "ERROR: Invalid enviroment variable (TCPSHARK_APPEARANCE).\n" 1>&2
+            exit 1
+            ;;
+    esac
+fi
+
+if [ -n "$TCPSHARK_MAX_INFORMATION_LENGTH" ]; then
+    check_length $TCPSHARK_MAX_INFORMATION_LENGTH
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Invalid enviroment variable (TCPSHARK_MAX_INFORMATION_LENGTH).\n" 1>&2
+        exit 1
+    fi
+    MAX_INFOLEN=$TCPSHARK_MAX_INFORMATION_LENGTH
+fi
+
+#==============================================================#
+# Sets ANSI color escape sequences                             #
+#==============================================================#
+case $APPEARANCE in
+    1)
+        ACES_BOLD="\033[1;97m"
+        ACES_RED="\033[1;91m"
+        ACES_GREEN="\033[1;92m"
+        ACES_YELLOW="\033[1;93m"
+        ACES_BLUE="\033[1;94m"
+        ACES_MAGENTA="\033[1;95m"
+        ACES_CYAN="\033[1;96m"
+        ACES_GRAY="\033[37m"
+        ACES_END="\033[0m"
+        ;;
+    2)
+        ACES_BOLD="\033[1;30m"
+        ACES_RED="\033[1;31m"
+        ACES_GREEN="\033[1;32m"
+        ACES_YELLOW="\033[1;33m"
+        ACES_BLUE="\033[1;34m"
+        ACES_MAGENTA="\033[1;35m"
+        ACES_CYAN="\033[1;36m"
+        ACES_GRAY="\033[90m"
+        ACES_END="\033[0m"
+        ;;
+esac
+
+#==============================================================#
+# Checks wireshark version                                     #
+#   1.0.0  - 1.7.*  : TcpShark not supported                   #
+#   1.8.0  - 1.11.* : ANALYSIS_LEVEL => 0                      #
+#   1.12.0 - 1.*.*  : ANALYSIS_LEVEL => 1                      #
+#   2.0.0  - 3.3.*  : ANALYSIS_LEVEL => 2                      #
+#   3.4.0  - *.*.*  : ANALYSIS_LEVEL => 3                      #
+#==============================================================#
+version=`get_version`
+case "$version" in
+    1.[8-9].*)      ANALYSIS_LEVEL=0;;
+    1.1[0-1].*)     ANALYSIS_LEVEL=0;;
+    1.1[2-9].*)     ANALYSIS_LEVEL=1;;
+    1.[2-9][0-9].*) ANALYSIS_LEVEL=1;;
+    2.*)            ANALYSIS_LEVEL=2;;
+    3.[0-3].*)      ANALYSIS_LEVEL=2;;
+    3.*)            ANALYSIS_LEVEL=3;;
+    [4-9].*)        ANALYSIS_LEVEL=3;;
+    *)              printf "ERROR: Wireshark version too old (${version}).\n" 1>&2; exit 1;;
+esac
+
+if [ $FLAG_S -eq 1 ]; then
+    check_field eth.dst.oui_resolved
+    if [ $? -eq 0 ]; then
+        DISPLAY_VENDOR=1
+    fi
+fi
+if [ $FLAG_X -eq 1 ]; then
+    check_field tcp.payload
+    if [ $? -ne 0 ]; then
+        printf "ERROR: -x option not supported because wireshark version is old (${version}).\n" 1>&2
+        exit 1
+    fi
+fi
+
+#==============================================================#
+# Checks custom filed                                          #
+#==============================================================#
+if [ $FLAG_F -eq 1 ]; then
+    check_field $CUSTOM_FIELD
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Field not supported ($CUSTOM_FIELD).\n" 1>&2
+        exit 1
+    fi
+fi
+if [ $FLAG_F2 -eq 1 ]; then
+    check_field $CUSTOM_FIELD2
+    if [ $? -ne 0 ]; then
+        printf "ERROR: Field not supported ($CUSTOM_FIELD2).\n" 1>&2
+        exit 1
+    fi
+fi
+
+#==============================================================#
+# Builds tshark's option parameter                             #
+#==============================================================#
+TSHARK_FIND_OPTIONS="-o nameres.mac_name:FALSE              \
+                     -o nameres.transport_name:FALSE        \
+                     -o nameres.network_name:FALSE          \
+                     -o frame.generate_epoch_time:FALSE     \
+                     -o tcp.check_checksum:FALSE            \
+                     -o tcp.desegment_tcp_streams:TRUE      \
+                     -o tcp.analyze_sequence_numbers:FALSE  \
+                     -o tcp.relative_sequence_numbers:FALSE \
+                     -o tcp.track_bytes_in_flight:FALSE     \
+                     -o tcp.calculate_timestamps:FALSE"
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o ip.use_geoip:FALSE"
+fi
+
+TSHARK_MAIN_OPTIONS="-o nameres.network_name:FALSE -o tcp.desegment_tcp_streams:TRUE"
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.use_geoip:FALSE"
+fi
+if [ $TIME_TYPE -eq 3 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
+fi
+has_tcp_analysis_field=0
+if [ $FLAG_F -eq 1 ]; then
+    case $CUSTOM_FIELD in
+        tcp.analysis.*) has_tcp_analysis_field=1;;
+    esac
+fi
+if [ $has_tcp_analysis_field -ne 1 -a $FLAG_F2 -eq 1 ]; then
+    case $CUSTOM_FIELD2 in
+        tcp.analysis.*) has_tcp_analysis_field=1;;
+    esac
+fi
+if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE"
+fi
+if [ $FLAG_Q -eq 1 -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+fi
+if [ "$CUSTOM_FIELD" = "tcp.analysis.bytes_in_flight" -o "$CUSTOM_FIELD2" = "tcp.analysis.bytes_in_flight" -o $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
+fi
+if [ $FLAG_N -eq 1 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE -o nameres.transport_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE -o tcp.calculate_timestamps:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE -o nameres.transport_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE -o tcp.calculate_timestamps:FALSE"
+fi
+
+#==============================================================#
+# Analyzes packet capture                                      #
+#==============================================================#
+if [ $FLAG_S -eq 1 ]; then
+    tcp_stream_flow
+elif [ $FLAG_N -eq 1 ]; then
+    tcp_stream_one
+else
+    tcp_stream_list
+fi
+
+exit $?
+
