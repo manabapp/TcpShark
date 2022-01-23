@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="2.8.0"                                                #
+VERSION="2.8.1"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -27,7 +27,7 @@ if [ $OS_TYPE -eq 0 ]; then
 else
     echo "usage: tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>] [-z | -f <field>]" 1>&2
 fi
-    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]" 1>&2
+    echo "       tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-i | -x <length> | -f <field>]" 1>&2
     echo "       tcpshark -r <infile> -n <number> [-C]" 1>&2
     echo "       tcpshark -h  (TcpShark's Manual)" 1>&2
     exit 1
@@ -74,7 +74,7 @@ fi
     echo ""
     echo "    <flow mode>"
     echo "    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]"
-    echo "                         [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]"
+    echo "                         [-z] [-i | -x <length> | -f <field>]"
     echo ""
     echo "    <one mode>"
     echo "    tcpshark -r <infile> -n <number> [-C]"
@@ -161,7 +161,8 @@ fi
     echo "          TCP segment data up to the specified bytes is output by hexadecimal"
     echo "          dump. (Wireshark 2.4.0 or newer)"
     echo "          Upper limit is ${MAX_LENGTH_LIMIT}. If length is 0, all data is displayed."
-    echo "          NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet."
+    echo "          Note that this data is TCP payload data, so not include TCP, IP, and"
+    echo "          Ethernet header fields."
     echo ""
     echo "    -f <field>"
     echo "          Specified field is displayed."
@@ -170,15 +171,6 @@ fi
     echo "          About available field, see Wireshark web site."
     echo ""
     echo "            https://www.wireshark.org/docs/dfref/"
-    echo ""
-    echo "    -e rtt|rto|dup"
-    echo "          Selects the type of TCP expert information."
-    echo ""
-    echo "          The type can be one of:"
-    echo ""
-    echo "            rtt   RTT to ACK the segment in frame"
-    echo "            rto   RTO for this segment from frame"
-    echo "            dup   Duplicate to the ACK in frame, and times"
     echo ""
     echo "    -h"
     echo "          Prints this help page."
@@ -221,11 +213,6 @@ fi
     echo "                         each direction."
     echo "                         Note that data length is not a frame size."
     echo ""
-    echo "      Custom STATISTICS  Number of packets which includes the specified field."
-    echo "                         Calculates sum-total, minimum, maximum and average"
-    echo "                         value, if field type is numerical (INT, UINT, BOOLEAN,"
-    echo "                         DOUBLE, FLOAT, or RELATIVE_TIME)."
-    echo ""
     echo "      Analysis           TCP analysis statistics."
     echo ""
     echo "                           ret : Retransmission"
@@ -246,6 +233,11 @@ fi
     echo "                           afo : Accepting TFO data       (Wireshark 3.4.0 or newer)"
     echo "                           ifo : Ignoring TFO data        (Wireshark 3.4.0 or newer)"
     echo "                           prt : TCP Port numbers reused"
+    echo ""
+    echo "      Custom STATISTICS  Number of packets which includes the specified field."
+    echo "                         Calculates sum-total, minimum, maximum and average"
+    echo "                         value, if field type is numerical (INT, UINT, BOOLEAN,"
+    echo "                         DOUBLE, FLOAT, or RELATIVE_TIME)."
     echo ""
     echo "    <flow mode>"
     echo "      Filter             Display filter used by Wireshark."
@@ -294,7 +286,7 @@ fi
     echo "                           [m] MSS=XXX             : MSS value"
     echo "                           [w] WS=XXX(YYY)         : Shift count, multiplier"
     echo "                           [S] SACK_PERM=1         : ---"
-    echo "                           [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge"
+    echo "                           [s] SLE=XXX SRE=YYY     : ACK left edge, right edge"
     echo "                           [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply"
     echo "                           [O] OTHER(kind:XXX)     : TCP option's kind"
     echo ""
@@ -310,10 +302,6 @@ fi
     echo "                         Only displays if each packet includes the field."
     echo "                         If you specify -f option twice, 2nd field is displayed"
     echo "                         in parentheses."
-    echo ""
-    echo "      Expert INFO        TCP expert information."
-    echo "                         Additional information according to the specified type"
-    echo "                         is displayed."
     echo ""
     echo "    <one mode>"
     echo "      TcpShark displays output of the following command as is."
@@ -1358,13 +1346,6 @@ tcp_stream_flow()
             tshark_fields="$tshark_fields -e $CUSTOM_FIELD2"
         fi
     fi
-    if [ $FLAG_E -eq 1 ]; then
-        case $EXPERT_TYPE in
-            0) tshark_fields="$tshark_fields -e tcp.analysis.ack_rtt -e tcp.analysis.acks_frame";;
-            1) tshark_fields="$tshark_fields -e tcp.analysis.rto -e tcp.analysis.rto_frame";;
-            2) tshark_fields="$tshark_fields -e tcp.analysis.duplicate_ack_frame -e tcp.analysis.duplicate_ack_num";;
-        esac
-    fi
     
     #==============================================#
     # Displays header information                  #
@@ -1391,8 +1372,6 @@ tcp_stream_flow()
             printf "=================================================================="
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
-        elif [ $FLAG_E -eq 1 ]; then
-            printf "============="
         else
             printf "==============="
         fi
@@ -1409,7 +1388,7 @@ tcp_stream_flow()
         if [ -n "$srcaddr6" ]; then
             printf "Stream: ${ACES_BOLD}${srcaddr6}.${srcport}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr6}.${dstport}${ACES_END}\n"
             if [ -n "$srcaddr" ]; then
-                printf "        ${ACES_BOLD}${srcaddr}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr}${ACES_END}\n"
+                printf "        ${srcaddr} ${ACES_GRAY}<---->${ACES_END} ${dstaddr}\n"
             fi
         else
             printf "Stream: ${ACES_BOLD}${srcaddr}:${srcport}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr}:${dstport}${ACES_END}\n"
@@ -1453,8 +1432,6 @@ tcp_stream_flow()
             printf "  Payload DATA                                                    "
         elif [ $FLAG_F -eq 1 ]; then
             printf "  Custom VALUE"
-        elif [ $FLAG_E -eq 1 ]; then
-            printf "  Expert INFO"
         else
             printf "  Option VALUES"
         fi
@@ -1480,8 +1457,6 @@ tcp_stream_flow()
             printf "=================================================================="
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
-        elif [ $FLAG_E -eq 1 ]; then
-            printf "============="
         else
             printf "==============="
         fi
@@ -1506,8 +1481,6 @@ tcp_stream_flow()
                      -v custom_column="$custom_column"   \
                      -v custom2="$FLAG_F2"               \
                      -v custom_column2="$custom_column2" \
-                     -v expert="$FLAG_E"                 \
-                     -v expert_type="$EXPERT_TYPE"       \
                      -v own_port="$srcport"              \
                      -v own_ipaddr="$srcaddr"            \
                      -v own_ipaddr6="$srcaddr6"          \
@@ -1754,10 +1727,6 @@ tcp_stream_flow()
                 custom_column = 29 + analysis_num
             e_custom_val = $custom_column
         }
-        if (expert) {
-            e_expert_val1 = $(29 + analysis_num)
-            e_expert_val2 = $(30 + analysis_num)
-        }
         
         #### No. ####
         printf("%8d", e_number)
@@ -1936,21 +1905,6 @@ tcp_stream_flow()
             printf("  %s", e_custom_val)
             if (custom2 && e_custom_val2 != "")
                 printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
-        }
-        else if (expert) {
-            #### Expert INFO ####
-            if (expert_type == 0) {
-                if (e_expert_val1 != "" && e_expert_val2 != "")
-                    printf("  %.6f %ssec (ack to %s%s%s)%s", e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
-            }
-            else if (expert_type == 1) {
-                if (e_expert_val1 != "" && e_expert_val2 != "")
-                    printf("  %.6f %ssec (from %s%s%s)%s", e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
-            }
-            else if (expert_type == 2) {
-                if (e_expert_val1 != "" && e_expert_val2 != "")
-                    printf("  %sDuplicate of%s %s %s(#%s%s%s)%s", ACES_GRAY, ACES_END, e_expert_val1, ACES_GRAY, ACES_END, e_expert_val2, ACES_GRAY, ACES_END)
-            }
         }
         else {
             #### Option VALUES ####
@@ -2229,13 +2183,11 @@ FLAG_I=0
 FLAG_X=0
 FLAG_F=0
 FLAG_F2=0
-FLAG_E=0
 FLAG_N=0
 
 HEXDUMP_LENGTH=0
 ANALYSIS_LEVEL=0
 DISPLAY_VENDOR=0
-EXPERT_TYPE=0
 TSHARK_INFILE=""
 TSHARK_FIND_OPTIONS=""
 TSHARK_MAIN_OPTIONS=""
@@ -2300,7 +2252,7 @@ esac
 #==============================================================#
 # Gets options                                                 #
 #==============================================================#
-while getopts "HC46dvwqzihVr:s:n:t:p:a:x:f:e:" flag; do
+while getopts "HC46dvwqzihVr:s:n:t:p:a:x:f:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -2340,14 +2292,6 @@ while getopts "HC46dvwqzihVr:s:n:t:p:a:x:f:e:" flag; do
                 CUSTOM_FIELD2=$OPTARG
             fi
             ;;
-        e) FLAG_E=1
-            case $OPTARG in
-                "rtt") EXPERT_TYPE=0;;
-                "rto") EXPERT_TYPE=1;;
-                "dup") EXPERT_TYPE=2;;
-                *)     usage;;
-            esac
-            ;;
     esac
 done
 
@@ -2372,17 +2316,13 @@ if [ $FLAG_S -eq 1 ]; then
     if [ $FLAG_N -eq 1 ]; then
         usage
     fi
-    if [ $FLAG_I -eq 1 ]; then
-        if [ $FLAG_X -eq 1 -o $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
-            usage
-        fi
+    if [ $FLAG_I -eq 1 -a $FLAG_X -eq 1 ]; then
+        usage
     fi
-    if [ $FLAG_X -eq 1 ]; then
-        if [ $FLAG_F -eq 1 -o $FLAG_E -eq 1 ]; then
-            usage
-        fi
+    if [ $FLAG_I -eq 1 -a $FLAG_F -eq 1 ]; then
+        usage
     fi
-    if [ $FLAG_F -eq 1 -a $FLAG_E -eq 1 ]; then
+    if [ $FLAG_X -eq 1 -a $FLAG_F -eq 1 ]; then
         usage
     fi
 elif [ $FLAG_N -eq 1 ]; then
@@ -2390,7 +2330,7 @@ elif [ $FLAG_N -eq 1 ]; then
     if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
         usage
     fi
-    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 ]; then
         usage
     fi
     if [ $FLAG_H -eq 1 -o $FLAG_T -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_F -eq 1 ]; then
@@ -2398,7 +2338,7 @@ elif [ $FLAG_N -eq 1 ]; then
     fi
 else
     #### list mode ####
-    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_I -eq 1 -o $FLAG_X -eq 1 ]; then
         usage
     fi
     if [ $TIME_TYPE -eq 2 -o $TIME_TYPE -eq 3 -o $TIME_TYPE -eq 5 ]; then
@@ -2610,7 +2550,7 @@ if [ $has_tcp_analysis_field -ne 1 -a $FLAG_F2 -eq 1 ]; then
         tcp.analysis.*) has_tcp_analysis_field=1;;
     esac
 fi
-if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_E -eq 1 -o $FLAG_N -eq 1 ]; then
+if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $FLAG_N -eq 1 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE"
 else
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:FALSE"
