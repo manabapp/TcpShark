@@ -10,7 +10,7 @@
 ### flow mode
 
     tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
-                         [-z] [-o | -x <length> | -f <field> | -e rtt|rto|dup]
+                         [-z] [-o | -x <length> | -f <field>]
 
 ### one mode
 
@@ -105,15 +105,6 @@ In list mode, statistics information is displayed in each direction.
 In flow mode, can be specified up to twice.  
 About available field, see Wireshark web site.  
 https://www.wireshark.org/docs/dfref/
-
-- `-e rtt|rto|dup`
-Selects the type of TCP expert information.  
-The type can be one of:  
-  |||
-  |:--|:--|
-  |`rtt`|RTT to ACK the segment in frame|
-  |`rto`|RTO for this segment from frame|
-  |`dup`|Duplicate to the ACK in frame, and times|
 
 - `-h`  
 Prints this help page.
@@ -251,10 +242,6 @@ Streams or packets are output in the following format:
                          Only displays if each packet includes the field.
                          If you specify -f option twice, 2nd field is displayed
                          in parentheses.
-      
-      Expert INFO        TCP expert information.
-                         Additional information according to the specified type
-                         is displayed.
 
 ### flow mode
 TcpShark displays output of the following command as is.
