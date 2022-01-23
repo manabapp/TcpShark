@@ -96,7 +96,8 @@ TCP Option's values are displayed.
 TCP segment data up to the specified bytes is output by hexadecimal  
 dump. **(Wireshark 2.4.0 or newer)**  
 Upper limit is 65536. If length is 0, all data is displayed.  
-NOTE: this data is TCP payload data, so not include TCP, IP, and Ethernet.  
+NOTE: this data is TCP payload data, so not include TCP, IP, and  
+Ethernet.  
 
 - `-f <field>`  
 Specified field is displayed.  
@@ -236,7 +237,7 @@ Streams or packets are output in the following format:
                            [m] MSS=XXX             : MSS value
                            [w] WS=XXX(YYY)         : Shift count, multiplier
                            [S] SACK_PERM=1         : ---
-                           [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge
+                           [s] SLE=XXX SRE=YYY     : ACK left edge, right edge
                            [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
                            [O] OTHER(kind:XXX)     : TCP option's kind
       
