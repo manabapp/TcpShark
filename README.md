@@ -211,7 +211,7 @@ Streams or packets are output in the following format:
       LENGTH             TCP segment length.
       
       FLAGS              TCP flags.
-                       Please refer to the description in <list mode>.
+                         Please refer to the description in <list mode>.
       
       SEQ/ACK Number     Sequence or Acknowledgment number.
       
@@ -231,6 +231,9 @@ Streams or packets are output in the following format:
       Analysis           TCP analysis information for TCP troubleshooting.
                          Please refer to the description in <list mode>.
       
+      Information        Information for upper layer protocol.
+                         Same contents as Wireshark 'Info' field is displayed.
+      
       Option VALUES      TCP Option's values (if some bits in OPTION area are
                          set).
       
@@ -240,9 +243,6 @@ Streams or packets are output in the following format:
                            [s] SLE=XXX SRE=YYY     : ACK left edge, right edge
                            [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
                            [O] OTHER(kind:XXX)     : TCP option's kind
-      
-      Information        Information for upper layer protocol.
-                         Same contents as Wireshark 'Info' field is displayed.
       
       Payload DATA       Hexadecimal dump and printable ascii string of TCP
                          segment data.
