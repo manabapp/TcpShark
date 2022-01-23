@@ -10,7 +10,7 @@
 ### flow mode
 
     tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
-                         [-z] [-i | -x <length> | -f <field> | -e rtt|rto|dup]
+                         [-z] [-o | -x <length> | -f <field> | -e rtt|rto|dup]
 
 ### one mode
 
@@ -22,13 +22,8 @@ This utility displays visually TCP stream for ease of analysis.
 
 ### How to use
 First, lists TCP streams in **list mode**.
-<img width="1076" alt="ScreenShot0" src="https://user-images.githubusercontent.com/73800089/145710097-b8706c0c-ca79-42fa-a517-2bc71d537481.png">
-
 Next, specifies the index of stream and looks over the packet flow in **flow**  
-**mode**.
-<img width="1076" alt="ScreenShot1" src="https://user-images.githubusercontent.com/73800089/145710099-fac677ae-1c79-48a8-b01e-b58301f9adb9.png">
-
-In addition, you can analyze as you like by piping the result to  
+**mode**. In addition, you can analyze as you like by piping the result to  
 `less -R` command.
 
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
@@ -94,8 +89,8 @@ In default, absolute numbers.
 TCP analysis information is displayed.  
 In detail, see "**OUTPUT FORMAT**".
 
-- `-i`  
-Information for upper layer protocol is displayed.
+- `-o`  
+TCP Option's values are displayed.
 
 - `-x <length>`  
 TCP segment data up to the specified bytes is output by hexadecimal  
@@ -157,14 +152,13 @@ Streams or packets are output in the following format:
                            C : Congestion Window Reduced (CWR)
                            N : Nonce
       
+      Protocol           Upper layer protocol over TCP/IP.
+                         If a stream contains multiple protocols, displays up to
+                         three protocols.
+      
       Packets Bytes      Number of packets count and total of TCP data length in
                          each direction.
                          Note that data length is not a frame size.
-      
-      Custom STATISTICS  Number of packets which includes the specified field.
-                         Calculates sum-total, minimum, maximum and average
-                         value, if field type is numerical (INT, UINT, BOOLEAN,
-                         DOUBLE, FLOAT, or RELATIVE_TIME).
       
       Analysis           TCP analysis statistics.
       
@@ -186,6 +180,11 @@ Streams or packets are output in the following format:
                            afo : Accepting TFO data       (Wireshark 3.4.0 or newer)
                            ifo : Ignoring TFO data        (Wireshark 3.4.0 or newer)
                            prt : TCP Port numbers reused
+      
+      Custom STATISTICS  Number of packets which includes the specified field.
+                         Calculates sum-total, minimum, maximum and average
+                         value, if field type is numerical (INT, UINT, BOOLEAN,
+                         DOUBLE, FLOAT, or RELATIVE_TIME).
 
 ### flow mode
 
@@ -226,6 +225,8 @@ Streams or packets are output in the following format:
                            |+---- TCP Window Scale Option
                            +----- TCP MSS Option
       
+      Protocol           Upper layer protocol over TCP/IP.
+      
       Analysis           TCP analysis information for TCP troubleshooting.
                          Please refer to the description in <list mode>.
       
@@ -238,8 +239,6 @@ Streams or packets are output in the following format:
                            [s] SLE=XXX SRE=YYY     : TCP ACK left edge, right edge
                            [t] TSval=XXX TSecr=YYY : Timestamp value, echo reply
                            [O] OTHER(kind:XXX)     : TCP option's kind
-      
-      Protocol           Upper layer protocol over TCP/IP.
       
       Information        Information for upper layer protocol.
                          Same contents as Wireshark 'Info' field is displayed.
