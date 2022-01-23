@@ -48,12 +48,54 @@
             
             <p>
             <br>
+            <span class="functions">Examples</span><br>
+            <ul>
+                <li><b>list mode</b></li>
+                Lists the TCP streams with in capture data.
+            </ul>
+            <img src="img/ScreenShot2.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>flow mode</b></li>
+                Displays the TCP stream specified by identifier (<b>Index</b> in list mode).
+            </ul>
+            <img src="img/ScreenShot3.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>one mode</b></li>
+                Displays the TCP packet specified by frame number (<b>No.</b> in flow mode).
+            </ul>
+            <img src="img/ScreenShot4.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>Analysis information</b></li>
+                Displays the TCP analysis information (e.g. packet loss, duplicate ack) supported by Wireshark with coloured lettering.
+            </ul>
+            <img src="img/ScreenShot5.png" alt="image1" width=100% />
+            <img src="img/ScreenShot6.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>Custom field</b></li>
+                Displays any field (e.g. TCP RTT) additionaly.
+            </ul>
+            <img src="img/ScreenShot7.png" alt="image1" width=100% />
+            <img src="img/ScreenShot8.png" alt="image1" width=100% />
+            
+            <p>
+            <br>
             <span class="functions">Change log</span><br>
             <table border=0 cellspacing=0>
                 <tr>
                     <th class="changelog">Date</th>
                     <th class="changelog">Version</th>
-                    <th class="changelog">Update / MD5</th>
+                    <th class="changelog" width=100%>Update / MD5</th>
+                </tr>
+                <tr>
+                    <td class="changelog0" rowspan=2>2022.01.23</td>
+                    <td class="changelog0" rowspan=2>3.0.0</td>
+                    <td class="changelog0">Renews output format<br>&nbsp;- Displays protocol column by default. (list mode)<br>&nbsp;- Displays protocol column always. (flow mode)<br>&nbsp;- Adds -o option instead of abolishing -i option. (flow mode)</td>
+                </tr><tr>
+                    <td class="changelog0md">c4f36e6c0ef078fddde515940049a270</td>
                 </tr>
                 <tr>
                     <td class="changelog1" rowspan=2>2022.01.19</td>
@@ -65,14 +107,14 @@
                 <tr>
                     <td class="changelog0" rowspan=2>2022.01.09</td>
                     <td class="changelog0" rowspan=2>2.7.0</td>
-                    <td class="changelog0">Changes to display vlan id if IEEE 802.1Q (flow mode)</td>
+                    <td class="changelog0">Changes to display vlan id if IEEE 802.1Q. (flow mode)</td>
                 </tr><tr>
                     <td class="changelog0md">d134f6fdff8a379bcb75070018e004ee</td>
                 </tr>
                 <tr>
                     <td class="changelog1" rowspan=2>2022.01.09</td>
                     <td class="changelog1" rowspan=2>2.6.0</td>
-                    <td class="changelog1">Changes to display OUI with full vendor name (flow mode)</td>
+                    <td class="changelog1">Changes to display OUI with full vendor name. (flow mode)</td>
                 </tr><tr>
                     <td class="changelog1md">1f71ae68db68c3685b8ecf12504fad13</td>
                 </tr>
@@ -93,7 +135,7 @@
                 <tr>
                     <td class="changelog0" rowspan=2>2021.12.30</td>
                     <td class="changelog0" rowspan=2>2.3.0</td>
-                    <td class="changelog0">Changes custom field to can be set twice (flow mode)</td>
+                    <td class="changelog0">Changes custom field to can be set twice. (flow mode)</td>
                 </tr><tr>
                     <td class="changelog0md">d353c1fe8b097c44fce0c573ecfd4f14</td>
                 </tr>
