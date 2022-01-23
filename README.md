@@ -323,7 +323,7 @@ FYR, operation has been confirmed on the following platforms:
 
 # VERSION
 The current stable release of TcpShark is 3.0.0 in Jan 23, 2022.  
-(md5: 4c52930f53421cb55861d5933a4a55e7)
+(md5: 612cd6f32ffd87a268f3c94bcee680f2)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
