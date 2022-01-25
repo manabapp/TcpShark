@@ -2,7 +2,7 @@
 ##################### DONT EDIT THIS FILE ######################
 #                                                              #
 NAME="tcpshark - Packet analyzer for TCP troubleshooting"      #
-VERSION="3.0.0"                                                #
+VERSION="3.0.1"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                                 Copyright (C) 2022 manabapp. #
@@ -281,10 +281,10 @@ fi
     echo "                           |+---- TCP Window Scale Option"
     echo "                           +----- TCP MSS Option"
     echo ""
-    echo "      Protocol           Upper layer protocol over TCP/IP."
-    echo ""
     echo "      Analysis           TCP analysis information for TCP troubleshooting."
     echo "                         Please refer to the description in <list mode>."
+    echo ""
+    echo "      Protocol           Upper layer protocol over TCP/IP."
     echo ""
     echo "      Information        Information for upper layer protocol."
     echo "                         Same contents as Wireshark 'Info' field is displayed."
@@ -1311,11 +1311,6 @@ tcp_stream_flow()
     -e $window_field \
     -e tcp.len \
     -e tcp.option_kind"
-    if [ $ANALYSIS_LEVEL -le 1 ]; then
-        tshark_fields="$tshark_fields -e col.Protocol"
-    else
-        tshark_fields="$tshark_fields -e _ws.col.Protocol"
-    fi
     
     if [ $FLAG_Z -eq 1 ]; then
         tshark_fields="$tshark_fields -e tcp.analysis.retransmission"
@@ -1390,8 +1385,10 @@ tcp_stream_flow()
         fi
     else
         if [ $ANALYSIS_LEVEL -le 1 ]; then
+            tshark_fields="$tshark_fields -e col.Protocol"
             tshark_fields="$tshark_fields -e col.Info"
         else
+            tshark_fields="$tshark_fields -e _ws.col.Protocol"
             tshark_fields="$tshark_fields -e _ws.col.Info"
         fi
     fi
@@ -1412,7 +1409,6 @@ tcp_stream_flow()
         printf "======="
         printf "==============================="
         printf "========"
-        printf "============"
         if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
@@ -1423,7 +1419,7 @@ tcp_stream_flow()
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
         else
-            printf "============="
+            printf "========================="
         fi
         printf "\n"
         printf "TCP Stream flow\n"
@@ -1473,7 +1469,6 @@ tcp_stream_flow()
         printf "FLAGS  "
         printf "         SEQ/ACK Number        "
         printf "  OPTION"
-        printf "  Protocol  "
         if [ $FLAG_Z -eq 1 ]; then
             printf "  Analysis"
         fi
@@ -1484,7 +1479,7 @@ tcp_stream_flow()
         elif [ $FLAG_F -eq 1 ]; then
             printf "  Custom VALUE"
         else
-            printf "  Information"
+            printf "  Protocol    Information"
         fi
         printf "\n"
         printf "========"
@@ -1499,7 +1494,6 @@ tcp_stream_flow()
         printf "======="
         printf "==============================="
         printf "========"
-        printf "============"
         if [ $FLAG_Z -eq 1 ]; then
             printf "=========="
         fi
@@ -1510,7 +1504,7 @@ tcp_stream_flow()
         elif [ $FLAG_F -eq 1 ]; then
             printf "=============="
         else
-            printf "============="
+            printf "========================="
         fi
         printf "\n"
     fi
@@ -1525,6 +1519,7 @@ tcp_stream_flow()
                      -v first_rtime="$first_rtime"       \
                      -v analysis="$FLAG_Z"               \
                      -v analysis_level="$ANALYSIS_LEVEL" \
+                     -v protoinfo_length="$MAX_INFOLEN"  \
                      -v option="$FLAG_O"                 \
                      -v hexdump="$FLAG_X"                \
                      -v hexdump_length="$HEXDUMP_LENGTH" \
@@ -1532,7 +1527,6 @@ tcp_stream_flow()
                      -v custom_column="$custom_column"   \
                      -v custom2="$FLAG_F2"               \
                      -v custom_column2="$custom_column2" \
-                     -v protoinfo_length="$MAX_INFOLEN"  \
                      -v own_port="$srcport"              \
                      -v own_ipaddr="$srcaddr"            \
                      -v own_ipaddr6="$srcaddr6"          \
@@ -1747,41 +1741,41 @@ tcp_stream_flow()
         e_window_size         = $18
         e_len                 = $19
         e_option_kind         = $20
-        e_protocol            = $21
         if (analysis) {
             for (i = 0; i < analysis_num; i++) {
                 key = analysis_keys[i]
-                e_analysis[key] = $(22 + i)
+                e_analysis[key] = $(21 + i)
             }
         }
         if (option) {
-            e_options["mss"]      = $(22 + analysis_num)
-            e_options["ws_shift"] = $(23 + analysis_num)
-            e_options["ws_multi"] = $(24 + analysis_num)
-            e_options["sack_cnt"] = $(25 + analysis_num)
-            e_options["sack_le"]  = $(26 + analysis_num)
-            e_options["sack_re"]  = $(27 + analysis_num)
-            e_options["ts_val"]   = $(28 + analysis_num)
-            e_options["ts_ecr"]   = $(29 + analysis_num)
+            e_options["mss"]      = $(21 + analysis_num)
+            e_options["ws_shift"] = $(22 + analysis_num)
+            e_options["ws_multi"] = $(23 + analysis_num)
+            e_options["sack_cnt"] = $(24 + analysis_num)
+            e_options["sack_le"]  = $(25 + analysis_num)
+            e_options["sack_re"]  = $(26 + analysis_num)
+            e_options["ts_val"]   = $(27 + analysis_num)
+            e_options["ts_ecr"]   = $(28 + analysis_num)
         }
         else if (hexdump) {
-            e_payload = $(22 + analysis_num)
+            e_payload = $(21 + analysis_num)
         }
         else if (custom) {
             if (custom2) {
                 if (custom_column2 == 0) {
                     if (custom_column == 0)
-                        custom_column2 = 23 + analysis_num
-                    else
                         custom_column2 = 22 + analysis_num
+                    else
+                        custom_column2 = 21 + analysis_num
                 }
                 e_custom_val2 = $custom_column2
             }
             if (custom_column == 0)
-                custom_column = 22 + analysis_num
+                custom_column = 21 + analysis_num
             e_custom_val = $custom_column
         }
         else {
+            e_protocol    = $(21 + analysis_num)
             e_information = $(22 + analysis_num)
         }
         
@@ -1926,12 +1920,6 @@ tcp_stream_flow()
         if (optset["other"])    opt_label = opt_label ACES_RED "O" ACES_END; else opt_label = opt_label ACES_GRAY "-" ACES_END;
         printf("  %s", opt_label);
         
-        #### Protocol ####
-        if (e_protocol != "TCP")
-            printf("  %-10s", e_protocol)
-        else
-            printf("            ")
-        
         #### Analysis ####
         if (analysis) {
             printf("  ");
@@ -1975,12 +1963,12 @@ tcp_stream_flow()
                 printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
         }
         else {
-            #### Information ####
+            #### Protocol Information ####
             if (e_protocol != "TCP") {
                 protocol_information = e_information
                 if (protoinfo_length > 0 && length(e_information) > protoinfo_length)
                     protocol_information = substr(e_information, 1, protoinfo_length) "..."
-                printf("  %s", protocol_information)
+                printf("  %-10s  %s", e_protocol, protocol_information)
             }
         }
         printf("\n")
@@ -2590,12 +2578,11 @@ TSHARK_FIND_OPTIONS="-o nameres.mac_name:FALSE              \
                      -o tcp.relative_sequence_numbers:FALSE \
                      -o tcp.track_bytes_in_flight:FALSE     \
                      -o tcp.calculate_timestamps:FALSE"
+TSHARK_MAIN_OPTIONS="-o nameres.network_name:FALSE          \
+                     -o tcp.desegment_tcp_streams:TRUE"
+
 if [ $ANALYSIS_LEVEL -ge 2 ]; then
     TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o ip.use_geoip:FALSE"
-fi
-
-TSHARK_MAIN_OPTIONS="-o nameres.network_name:FALSE -o tcp.desegment_tcp_streams:TRUE"
-if [ $ANALYSIS_LEVEL -ge 2 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.use_geoip:FALSE"
 fi
 if [ $TIME_TYPE -eq 3 -o $FLAG_N -eq 1 ]; then
@@ -2630,12 +2617,20 @@ else
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
 fi
 if [ $FLAG_N -eq 1 ]; then
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE -o nameres.transport_name:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE -o tcp.calculate_timestamps:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE -o ip.summary_in_tree:FALSE -o ipv6.summary_in_tree:FALSE -o tcp.summary_in_tree:FALSE -o udp.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ipv6.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.summary_in_tree:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o udp.summary_in_tree:FALSE"
 else
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE -o nameres.transport_name:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE -o tcp.calculate_timestamps:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:FALSE"
 fi
 
 #==============================================================#
