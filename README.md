@@ -217,10 +217,10 @@ Streams or packets are output in the following format:
                            |+---- TCP Window Scale Option
                            +----- TCP MSS Option
       
-      Protocol           Upper layer protocol over TCP/IP.
-      
       Analysis           TCP analysis information for TCP troubleshooting.
                          Please refer to the description in <list mode>.
+      
+      Protocol           Upper layer protocol over TCP/IP.
       
       Information        Information for upper layer protocol.
                          Same contents as Wireshark 'Info' field is displayed.
@@ -322,12 +322,12 @@ FYR, operation has been confirmed on the following platforms:
   `TCPSHARK_APPEARANCE=Light`
 
 # VERSION
-The current stable release of TcpShark is 3.0.0 in Jan 23, 2022.  
-(md5: 612cd6f32ffd87a268f3c94bcee680f2)
+The current stable release of TcpShark is 3.0.2 in Jan 25, 2022.  
+(md5: 41f5a0af3879f38ea38e578de6224531)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
 
 ---
 
-Copyright (C) 2022 manabapp.
+Copyright (C) 2014-2022 manabapp.
