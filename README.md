@@ -318,8 +318,8 @@ FYR, operation has been confirmed on the following platforms:
   `TCPSHARK_APPEARANCE=Light`
 
 # VERSION
-The current stable release of TcpShark is 3.1.1 in Sep 19, 2022.  
-(md5: 15ad8fb1b2f253bc14d0cd926f8a4133)
+The current stable release of TcpShark is 3.1.2 in Sep 19, 2022.  
+(md5: b400e5e863820133d5de55ea764bb67e)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
