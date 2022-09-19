@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="3.1.1"                                                #
+VERSION="3.1.2"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -380,6 +380,17 @@ check_streams()
     expr "$number" + 1 > /dev/null 2>&1
     if [ $? -lt 2 ] ; then
         if [ $number -ge 1 -a $number -le $MAX_STREAMS_LIMIT ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+check_number()
+{
+    number=$1
+    expr "$number" + 1 > /dev/null 2>&1
+    if [ $? -lt 2 ] ; then
+        if [ $number -ge 1 ]; then
             return 0
         fi
     fi
@@ -2529,6 +2540,13 @@ fi
 #==============================================================#
 # Checks option value                                          #
 #==============================================================#
+if [ $FLAG_N -eq 1 ]; then
+    check_number $FRAME_NUMBER
+    if [ $? -ne 0 ]; then
+        printf "${ACES_RED}ERROR${ACES_END}: Invalid frame number (${FRAME_NUMBER}).\n" 1>&2
+        exit 1
+    fi
+fi
 if [ $FLAG_X -eq 1 ]; then
     check_length $HEXDUMP_LENGTH
     if [ $? -ne 0 ]; then
