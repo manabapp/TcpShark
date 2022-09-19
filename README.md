@@ -4,17 +4,17 @@
 # SYNOPSIS
 ### list mode
 
-    tcpshark -r <infile> [-H] [-C] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>]
+    tcpshark -r <infile> [-H] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>]
                          [-d] [-z | -f <field>]
 
 ### flow mode
 
-    tcpshark -r <infile> -s <index> [-H] [-C] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
+    tcpshark -r <infile> -s <index> [-H] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
                          [-z] [-o | -x <length> | -f <field>]
 
 ### one mode
 
-    tcpshark -r <infile> -n <number> [-C]
+    tcpshark -r <infile> -n <number>
 
 # DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
@@ -42,10 +42,6 @@ Displays the specific packet in one mode.
 
 - `-H`  
 Omits the header information.  
-
-- `-C`  
-Displays a result in colorless.  
-In default, displays colorfully with ANSI color escape sequences.  
 
 - `-t a|ad|dd|e|r|rs`  
 Selects the format of the packet timestamp.  
@@ -277,7 +273,7 @@ For details on these options, see output of the following command:
 |TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If command not found on your system, set the full path of the command.|
 |TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the<br>user specified in this variable.<br>(**Linux, Solaris use only**)|
 |TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of<br>streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
-|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark` or<br>`Light`. Default is `Dark`.<br>If your terminal's background is whitish color, set `Light`.|
+|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark`,<br>`Light` or `Mono`. `Dark` is recommended.<br>If `Mono`(default), displays in monochrome.<br>If your terminal's background is whitish color, set `Light`.|
 |TCPSHARK_MAX_INFORMATION_LENGTH|Maximum length of protocol information in flow mode.<br>If an information is longer than this length, the information is<br>truncated to this length.<br>Default length is 48. Upper limit is 65536. If 0, not truncated.|
 
 # EXIT STATUS
@@ -322,8 +318,8 @@ FYR, operation has been confirmed on the following platforms:
   `TCPSHARK_APPEARANCE=Light`
 
 # VERSION
-The current stable release of TcpShark is 3.0.3 in Jan 26, 2022.  
-(md5: 95e3475c6a183e89d88588bdb06826bd)
+The current stable release of TcpShark is 3.1.0 in Sep 19, 2022.  
+(md5: 26523e6249a52d360257f067db78ba87)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
