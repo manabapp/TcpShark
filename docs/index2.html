@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"> <html> <head> <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> <meta http-equiv="Content-Style-Type" content="text/css"> <meta name="viewport" content="width=375,initial-scale=1,user-scalable=yes"> <title>TcpShark</title>
+    <link rel="stylesheet" href="apps.css">
+    </head>
+    <body>
+    <div class="outer">
+        <img src="img/TcpShark_splash.png" width=130 height=130 alt="AppIcon" /><br>
+        <div class="title">TcpShark</div>
+        
+        <p>
+        
+        Packet analyzer specializing in TCP analysis.
+        <div class="inner">
+            <img src="img/ScreenShot1.png" alt="image1" width=100% />
+        </div>
+        <div id="p1">
+            <a onclick="showDescription();">Learn more</a>
+        </div>
+        <div id="p2">
+            <a onclick="hideDescription();">Hide text</a><br>
+            <div class="inner">
+                TcpShark is CLI utility which uses Wireshark as an analysis engine.<br>
+                <p>
+                We cannot investigate a network trouble packets without analyzing packets.
+                However, even with Wireshark, it requires craftsmanship and experience to analyze large amount and more comprex TCP streams.<br>
+                This utility graphically displays the packet flow on a TCP stream. Thereby, it easy for anyone to understand the end-to-end data flow.<br>
+                I'm sure that TcpShark help your troubleshooting as a complementary utility to Wireshark.
+                
+                <p>
+                <br>
+                <span class="functions">Features</span>
+                <ul>
+                    <li><b>Unique format</b></li>
+                    Data size, window size, and SEQ/ACK number are displayed in an well-ordered column. So, you become easier to read the tendency / change in each field of TCP header.<p>
+                    <li><b>Intuitive design</b></li>
+                    Packet direction, TCP flags (e.g. SYN, RST) and analysis information (e.g. packet loss, retransmission) are displayed with coloured lettering. So, you become easier to notice abnormalities even in a large amount of captured data.<p>
+                    <li><b>Customizable</b></li>
+                    Various protocol fields supported by Wireshark (e.g. HTTP request URI, HTTP status code) can be display optionally. So, you can analyze in association with protocol information other than TCP.
+                </ul>
+                
+                <p>
+                <br>
+                <span class="functions">Installation</span>
+                <ol>
+                    <li>Downloads the script file in /usr/local/bin directory.</li>
+                    <pre class="commandline">$ wget https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark
+    Or
+    $ curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark</pre>
+                    <li>Gives you permission to execute the file.</li>
+                    <pre class="commandline">$ chmod 0755 tcpshark</pre>
+                    <li><b>(Optional)</b> Sets the environment variable TCPSHARK_APPEARANCE in .bash_profile, .zprofile, etc.</li>
+                    e.g. when your terminal background color is black<br>
+                    <pre class="commandline">export TCPSHARK_APPEARANCE=Dark</pre>
+                    <li><b>(Windows only)</b> Sets the environment variable **TCPSHARK_TSHARK_COMMAND** in .bash_profile, .zprofile, etc.</li>
+                    e.g. When you install Wireshark to C:¥Program Files<br>
+                    <pre class="commandline">export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"</pre>
+                </ol>
+                
+                <p>
+                <br>
+                <span class="functions">Examples</span><br>
+                <ul>
+                    <li><b>list mode</b></li>
+                    Lists the TCP streams with in capture data.
+                </ul>
+                <img src="img/ScreenShot2.png" alt="image1" width=100% />
+                
+                <ul>
+                    <li><b>flow mode</b></li>
+                    Displays the TCP stream specified by identifier (<b>Index</b> in list mode).
+                </ul>
+                <img src="img/ScreenShot3.png" alt="image1" width=100% />
+                
+                <ul>
+                    <li><b>one mode</b></li>
+                    Displays the TCP packet specified by frame number (<b>No.</b> in flow mode).
+                </ul>
+                <img src="img/ScreenShot4.png" alt="image1" width=100% />
+                
+                <ul>
+                    <li><b>Analysis information</b></li>
+                    Displays the TCP analysis information (e.g. packet loss, duplicate ack) supported by Wireshark with coloured lettering.
+                </ul>
+                <img src="img/ScreenShot5.png" alt="image1" width=100% />
+                <img src="img/ScreenShot6.png" alt="image1" width=100% />
+                
+                <ul>
+                    <li><b>Custom field</b></li>
+                    Displays any field (e.g. TCP RTT) additionaly.
+                </ul>
+                <img src="img/ScreenShot7.png" alt="image1" width=100% />
+                <img src="img/ScreenShot8.png" alt="image1" width=100% />
+            </div>
+            <a onclick="hideDescription();">Hide text</a>
+        </div>
+        
+        <p>
+        <center>
+        </center>
+    
+        <p>
+        <!-- refer: https://primer.style/octicons/ -->
+        <a href="../Apps/index.html"><img src="img/home.svg" height=24 alt="HomePage" title="Go back to Home page" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a href="https://github.com/manabapp/TcpShark"><img src="img/mark-github.svg" height=24 alt="GitHub" title="Go to GitHub site" /></a>
+        <br>
+        <!-- refer: https://qiita.com/macoril/items/48125b2a0a48339b3693 -->
+        <!-- refer: https://developer.apple.com/jp/app-store/marketing/guidelines/ -->
+        <span class="trademarks">TcpShark runs on terminal in Linux/Solaris/macOS/Windows.</span>
+    
+        <p>
+        
+        <div class="copyright">© 2022 manabapp.<br>
+            <b>English</b> | <a class="footer" href="index_ja.html">Japanese</a>
+        </div>
+        
+        <p>
+    
+    </div>
+    <script>
+        document.getElementById("p1").style.display = "block";
+        document.getElementById("p2").style.display = "none";
+        function showDescription(){
+            document.getElementById("p1").style.display = "none";
+            document.getElementById("p2").style.display = "block";
+        }
+        function hideDescription(){
+            document.getElementById("p1").style.display = "block";
+            document.getElementById("p2").style.display = "none";
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+    </body>
+    </html>
+    
