@@ -301,21 +301,17 @@ FYR, operation has been confirmed on the following platforms:
 
 # INSTALLATION
 
-### Linux, Solaris, macOS
-1. Places the script file `tcpshark` in **/usr/local/bin** directory.  
+1. Download the script file in **/usr/local/bin** directory.  
+   `wget https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark`  
+   Or  
+   `curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark`  
 2. Gives you permission to execute the file.  
   `chmod 0755 tcpshark` 
-3. **(Optional)** Sets an environment variable in .bash_profile, .zprofile, or etc, if your terminal background color is white.  
-  `TCPSHARK_APPEARANCE=Light`
-
-### Windows
-1. Places the script file `tcpshark` in **&lt;Cygwin install folder&gt;\usr\local\bin** directory.  
-  (e.g. **c:\cygwin\usr\local\bin**)
-2. Sets an environment variable in .bash_profile on Cygwin.  
+3. **(Cygwin Only)** Sets the environment variable **TCPSHARK_TSHARK_COMMAND** in .bash_profile, .zprofile, etc.  
   `export TCPSHARK_TSHARK_COMMAND=<Wireshark install folder>/tshark.exe`  
   (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
-3. **(Optional)** Sets an environment variable in .bash_profile on Cygwin, if your terminal background color is white.  
-  `TCPSHARK_APPEARANCE=Light`
+4. **(Optional)** Sets the environment variable **TCPSHARK_APPEARANCE** in .bash_profile, .zprofile, etc.  
+(e.g. `export TCPSHARK_APPEARANCE=Dark` if your terminal background color is black)
 
 # VERSION
 The current stable release of TcpShark is 3.1.2 in Sep 19, 2022.  
