@@ -43,14 +43,14 @@
                 <ol>
                     <li>Downloads the script file in /usr/local/bin directory.</li>
                     <pre class="commandline">$ wget https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark
-    Or
-    $ curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark</pre>
+Or
+$ curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark</pre>
                     <li>Gives you permission to execute the file.</li>
                     <pre class="commandline">$ chmod 0755 tcpshark</pre>
-                    <li><b>(Optional)</b> Sets the environment variable TCPSHARK_APPEARANCE in .bash_profile, .zprofile, etc.</li>
+                    <li><b>(Optional)</b> Sets TCPSHARK_APPEARANCE in .bash_profile, .zprofile, etc.</li>
                     e.g. when your terminal background color is black<br>
                     <pre class="commandline">export TCPSHARK_APPEARANCE=Dark</pre>
-                    <li><b>(Windows only)</b> Sets the environment variable **TCPSHARK_TSHARK_COMMAND** in .bash_profile, .zprofile, etc.</li>
+                    <li><b>(Windows only)</b> Sets TCPSHARK_TSHARK_COMMAND in .bash_profile, .zprofile, etc.</li>
                     e.g. When you install Wireshark to "C:¥Program Files" folder<br>
                     <pre class="commandline">export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"</pre>
                 </ol>
