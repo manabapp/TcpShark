@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="3.1.2"                                                #
+VERSION="3.1.3"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -368,7 +368,6 @@ fi
     printf "${ACES_BOLD}EXIT STATUS${ACES_END}\n"
     printf "    This utility exits 0 on success, or 1 if error.\n"
     printf "\n"
-    exit 0
 }
 
 #==============================================================#
@@ -2358,7 +2357,8 @@ while getopts "H46dvwqzohVr:s:n:t:p:a:x:f:" flag; do
         q) FLAG_Q=1;;
         z) FLAG_Z=1;;
         o) FLAG_O=1;;
-        h) print_help | less -R -P " Manual page line %l (press 'h' for help or 'q' to quit)";;
+        h) print_help | less -R -P " Manual page line %l (press 'h' for help or 'q' to quit)"
+           exit 0;;
         V) print_version;;
         r) FLAG_R=1; TSHARK_INFILE="$OPTARG";;
         s) FLAG_S=1; STREAM_INDEX=$OPTARG;;
