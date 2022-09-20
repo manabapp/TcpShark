@@ -46,14 +46,14 @@ Omits the header information.
 - `-t a|ad|dd|e|r|rs`  
 Selects the format of the packet timestamp.  
 The format can be one of:  
-  ||||
-  |:--|:--|:--|
-  |`a`|absolute time with no date|Default|
-  |`ad`|absolute date and time||
-  |`dd`|delta time since the previous displayed packet||
-  |`e`|epoch time in seconds since Jan 1, 1970 00:00:00||
-  |`r`|relative time since the first packet in the capture file||
-  |`rs`|relative time since the first packet in the stream||
+  |Type|Description|
+  |:--|:--|
+  |`a`|absolute time with no date **[Default]**|
+  |`ad`|absolute date and time|
+  |`dd`|delta time since the previous displayed packet|
+  |`e`|epoch time in seconds since Jan 1, 1970 00:00:00|
+  |`r`|relative time since the first packet in the capture file|
+  |`rs`|relative time since the first packet in the stream|
 
 - `-p <port>`  
 Only streams with specified port are displayed.
