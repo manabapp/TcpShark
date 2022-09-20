@@ -21,9 +21,9 @@ TcpShark is network analyzing script, powered by Wireshark.
 This utility displays visually TCP stream for ease of analysis.
 
 ### How to use
-First, lists TCP streams in **list mode**.
-Next, specifies the index of stream and looks over the packet flow in **flow**  
-**mode**. In addition, you can analyze as you like by piping the result to  
+First, lists TCP streams in **list mode**.  
+Next, specifies the index of stream and looks over the packet flow in    
+**flow mode**. In addition, you can analyze as you like by piping the result to  
 `less -R` command.
 
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
@@ -271,9 +271,9 @@ For details on these options, see output of the following command:
 |Variable|Description|
 |:--|:--|
 |TCPSHARK_TSHARK_COMMAND|File path of executable command `tshark`.<br>If command not found on your system, set the full path of the command.|
-|TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as the<br>user specified in this variable.<br>(**Linux, Solaris use only**)|
-|TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number of<br>streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
-|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from `Dark`,<br>`Light` or `Mono`. `Dark` is recommended.<br>If `Mono`(default), displays in monochrome.<br>If your terminal's background is whitish color, set `Light`.|
+|TCPSHARK_EXECUTION_USER|Execution user name to use instead of root.<br>If you run as root user, TcpShark internally executes tshark as<br>the user specified in this variable.<br>(**Linux, Solaris use only**)|
+|TCPSHARK_MAX_STREAMS|Maximum number of streams that can be processed in list mode.<br>Default value is 262144. Upper limit is 1048576.<br>If a huge number of streams in your capture file, set the number<br>of streams or each more.<br>Note that it may require a lot of memory to process huge streams.|
+|TCPSHARK_APPEARANCE|TcpShark displays colorfully with ANSI color escape sequences.<br>Selects appearance according to your terminal color from<br>``Dark`, Light` or `Mono`. `Dark` is recommended.<br>If `Mono`(default), displays in monochrome.<br>If your terminal's background is whitish color, set `Light`.|
 |TCPSHARK_MAX_INFORMATION_LENGTH|Maximum length of protocol information in flow mode.<br>If an information is longer than this length, the information is<br>truncated to this length.<br>Default length is 48. Upper limit is 65536. If 0, not truncated.|
 
 # EXIT STATUS
