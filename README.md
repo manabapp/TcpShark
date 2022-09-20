@@ -306,12 +306,12 @@ FYR, operation has been confirmed on the following platforms:
    Or  
    `curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark`  
 2. Gives you permission to execute the file.  
-  `chmod 0755 tcpshark` 
-3. **(Windows Only)** Sets the environment variable **TCPSHARK_TSHARK_COMMAND** in .bash_profile, .zprofile, etc.  
-  `export TCPSHARK_TSHARK_COMMAND=<Wireshark install folder>/tshark.exe`  
-  (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
+   `chmod 0755 tcpshark` 
 4. **(Optional)** Sets the environment variable **TCPSHARK_APPEARANCE** in .bash_profile, .zprofile, etc.  
-(e.g. `export TCPSHARK_APPEARANCE=Dark` if your terminal background color is black)
+   (e.g. `export TCPSHARK_APPEARANCE=Dark` if your terminal background color is black)
+3. **(Windows Only)** Sets the environment variable **TCPSHARK_TSHARK_COMMAND** in .bash_profile, .zprofile, etc.  
+   `export TCPSHARK_TSHARK_COMMAND=<Wireshark install folder>/tshark.exe`  
+   (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
 The current stable release of TcpShark is 3.1.2 in Sep 19, 2022.  
