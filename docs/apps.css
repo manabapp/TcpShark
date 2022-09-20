@@ -18,4 +18,4 @@ th{text-align:center; font-size:14px;}
 .item{display:inline-block; width:90%; height:200px; margin:16px; font-size:48px;}
 .yoko{display:flex; overflow-x:scroll; text-align:center;}
 .screenshotimg{border-radius:30px; box-shadow:0px 0px 3px; width:276px; height:597px; margin:10px;}
-.commandline{color:white; padding:10px; border:solid 2px white; border-radius:2px; background-color:#2f3232; margin-top:10px; margin-bottom:10px;}
+.commandline{color:white; padding:10px; border:solid 2px white; border-radius:2px; background-color:#343437; margin-top:10px; margin-bottom:10px;}
