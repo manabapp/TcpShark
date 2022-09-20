@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="viewport" content="width=375,initial-scale=1,user-scalable=yes">
+<title>TcpShark (Japanese)</title>
+<link rel="stylesheet" href="apps.css">
+</head>
+<body>
+<div class="outer">
+    <img src="img/TcpShark_splash.png" width=130 height=130 alt="AppIcon" /><br>
+    <div class="title">TcpShark</div>
+    
+    <p>
+    
+    TCP の解析に特化したパケットアナライザです。
+    <div class="inner">
+        <img src="img/ScreenShot1.png" alt="image1" width=100% />
+    </div>
+    <div id="p1">
+        <a onclick="showDescription();">さらに詳しく</a>
+    </div>
+    <div id="p2">
+        <a onclick="hideDescription();">説明を隠す</a><br>
+        <div class="inner">
+            TcpShark は、Wireshark を解析エンジンとした CLI ツールです。<br>
+            <p>
+            ネットワークのトラブルシューティングでは、パケット解析による調査が不可欠です。ただし、Wireshark を使用したとしても、大容量かつ複雑化する TCP ストリームの解析には職人的なスキルと経験を必要とするでしょう。<br>
+            このツールで TCP ストリームのパケットフローをグラフィカルに表示することにより、誰でもエンドツーエンドのデータの流れを容易に把握することができます。<br>
+            Wireshark を補完するツールとして、TcpShark はあなたのトラブルシューティングの手助けになるでしょう。
+            
+            <p>
+            <br>
+            <span class="functions">特長</span>
+            <ul>
+                <li><b>独自フォーマット</b></li>
+                データサイズ、ウィンドウサイズ、SEQ/ACK 番号を整然と表示することで、TCP ヘッダの各フィールドの推移・変化を読み取りやすくなります。<p>
+                <li><b>直感的なデザイン</b></li>
+                パケット方向、TCP フラグ（SYN、RST など）、Analysis 情報（パケロス、再送 など）を色分けして表示することで、大容量のキャプチャデータにおいても異常に気付きやすくなります。<p>
+                <li><b>カスタマイズ可能</b></li>
+                Wireshark がサポートする各種プロトコルフィールド（HTTPリクエストURI、HTTPステータスコード など）を追加表示することで、TCP 以外のプロトコル情報と関連付けて解析できます。
+            </ul>
+            
+            <p>
+            <br>
+            <span class="functions">導入方法</span>
+            <ol>
+                <li>/usr/local/bin</b> に実行ファイルをダウンロード</li>
+                <pre class="commandline">$ wget https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark
+または
+$ curl -o tcpshark https://raw.githubusercontent.com/manabapp/TcpShark/main/tcpshark</pre>
+                <li>ファイルに実行権を付与</li>
+                <pre class="commandline">$ chmod 0755 tcpshark</pre>
+                <li><b>(任意)</b> .bash_profile や .zprofile に環境変数 TCPSHARK_APPEARANCE を設定</li>
+                例：端末画面が黒色の場合<br>
+                <pre class="commandline">export TCPSHARK_APPEARANCE=Dark</pre>
+                <li><b>(Cygwin のみ)</b> .bash_profile や .zprofile に環境変数 TCPSHARK_TSHARK_COMMAND を設定</li>
+                例：C:¥Program Files 配下に Wireshark をインストールしている場合<br>
+                <pre class="commandline">export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"</pre>
+            </ol>
+            
+            <p>
+            <br>
+            <span class="functions">使用例</span><br>
+            <ul>
+                <li><b>list mode</b></li>
+                キャプチャデータに含まれる TCP ストリームを一覧表示します。
+            </ul>
+            <img src="img/ScreenShot2.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>flow mode</b></li>
+                指定した識別子（list mode の <b>Index</b>）の TCP ストリームをフロー表示します。
+            </ul>
+            <img src="img/ScreenShot3.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>one mode</b></li>
+                指定したフレーム番号（flow mode の <b>No.</b>）の TCP パケットを詳細表示します。
+            </ul>
+            <img src="img/ScreenShot4.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>Analysis 情報</b></li>
+                Wireshark が検出可能な TCP Analysis 情報（パケロス、重複 ACK など）を色分けして表示します。
+            </ul>
+            <img src="img/ScreenShot5.png" alt="image1" width=100% />
+            <img src="img/ScreenShot6.png" alt="image1" width=100% />
+            
+            <ul>
+                <li><b>カスタムフィールド</b></li>
+                任意のフィールド（例：TCP RTT）を付加して表示します。
+            </ul>
+            <img src="img/ScreenShot7.png" alt="image1" width=100% />
+            <img src="img/ScreenShot8.png" alt="image1" width=100% />
+        </div>
+        <a onclick="hideDescription();">説明を隠す</a>
+    </div>
+    
+    <p>
+    <center>
+    </center>
+
+    <p>
+    <!-- refer: https://primer.style/octicons/ -->
+    <a href="../Apps/index_ja.html"><img src="img/home.svg" height=24 alt="HomePage" title="ホームページに戻る" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="https://github.com/manabapp/TcpShark"><img src="img/mark-github.svg" height=24 alt="GitHub" title="GitHub サイトに移動" /></a>
+    <br>
+    <!-- refer: https://qiita.com/macoril/items/48125b2a0a48339b3693 -->
+    <!-- refer: https://developer.apple.com/jp/app-store/marketing/guidelines/ -->
+    <span class="trademarks">TcpShark は、Linux/Solaris/macOS/Windows のターミナル上で動作します。</span>
+
+    <p>
+    
+    <div class="copyright">© 2022 manabapp.<br>
+        <a class="footer" href="index.html">English</a> | <b>日本語</b>
+    </div>
+    
+    <p>
+
+</div>
+<script>
+    document.getElementById("p1").style.display = "block";
+    document.getElementById("p2").style.display = "none";
+    function showDescription(){
+        document.getElementById("p1").style.display = "none";
+        document.getElementById("p2").style.display = "block";
+    }
+    function hideDescription(){
+        document.getElementById("p1").style.display = "block";
+        document.getElementById("p2").style.display = "none";
+    }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+</body>
+</html>
