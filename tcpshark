@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.0.0"                                                #
+VERSION="4.1.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -30,7 +30,7 @@ else
     echo "       tcpshark -r <infile> [-p <port>] [-4 | -6 | -a <addr>] [-H] [-t a|ad|r] [-z | -f <field>]" 1>&2
 fi
     echo "       tcpshark -r <infile> -s <index> [-H] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-o | -x <length> | -f <field>]" 1>&2
-    echo "       tcpshark -r <infile> -n <number>" 1>&2
+    echo "       tcpshark -r <infile> -n <number> [-e]" 1>&2
     echo "       tcpshark -h  (Manual page)" 1>&2
     exit 1
 }
@@ -83,7 +83,7 @@ fi
     printf "                              [-w] [-q] [-z] [-o | -f <field>]\n"
     printf "\n"
     printf "    ${ACES_GRAY}<one mode>${ACES_END}\n"
-    printf "      ${ACES_BOLD}tcpshark${ACES_END} -r <infile> -n <number>\n"
+    printf "      ${ACES_BOLD}tcpshark${ACES_END} -r <infile> -n <number> [-e]\n"
     printf "\n"
     printf "${ACES_BOLD}DESCRIPTION${ACES_END}\n"
     printf "    ${NAME} is network analyzing script, powered by Wireshark.\n"
@@ -182,6 +182,9 @@ fi
     printf "          About available field, see Wireshark web site.\n"
     printf "\n"
     printf "            ${ACES_GRAY}https://www.wireshark.org/docs/dfref/${ACES_END}\n"
+    printf "\n"
+    printf "    ${ACES_BOLD}-e${ACES_END}\n"
+    printf "          Prints an entire information of the packet details.\n"
     printf "\n"
     printf "    ${ACES_BOLD}-h${ACES_END}\n"
     printf "          Prints this help page.\n"
@@ -1772,6 +1775,7 @@ tcp_stream_flow()
 tcp_stream_one()
 {
     "$AWK_COMMAND" -v os_type="$OS_TYPE" \
+                   -v entire="$FLAG_E"   \
                    -v appearance="$APPEARANCE" '
     BEGIN {
         if (os_type == 3)
@@ -1902,16 +1906,18 @@ tcp_stream_one()
             printf("%s%s %s\n", ACES_BGGRAY, line, ACES_END)
             next
         }
-        for (key in flag_labels) {
-            label = " = " flag_labels[key] ": Set"
-            if (index(line, label) > 0) {
-               printf("%s%s%s\n", aces_colors[key], line, ACES_END)
-               next
-            }
-            label = " = " flag_labels[key] ": Not set"
-            if (index(line, label) > 0) {
-               printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
-               next
+        if (entire) {
+            for (key in flag_labels) {
+                label = " = " flag_labels[key] ": Set"
+                if (index(line, label) > 0) {
+                   printf("%s%s%s\n", aces_colors[key], line, ACES_END)
+                   next
+                }
+                label = " = " flag_labels[key] ": Not set"
+                if (index(line, label) > 0) {
+                   printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+                   next
+                }
             }
         }
         label = tcpopt_label " - "
@@ -1926,20 +1932,27 @@ tcp_stream_one()
             printf("%s%s%s\n", ACES_RED, line, ACES_END)
             next
         }
-        for (key in analysis_msgs) {
-            label = "[" analysis_msgs[key] "]"
-            ptr = index(line, label)
-            if (ptr > 0) {
-               msg_len = length(analysis_msgs[key])
-               printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, aces_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
-               next
+        if (entire) {
+            for (key in analysis_msgs) {
+                label = "[" analysis_msgs[key] "]"
+                ptr = index(line, label)
+                if (ptr > 0) {
+                   msg_len = length(analysis_msgs[key])
+                   printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, aces_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
+                   next
+                }
             }
         }
         if (substr(line, 1, 8) == "        ") {
-            printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+            if (entire) {
+                printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
+            }
             next
         }
         if (substr(line, len, 1) == "]") {
+            if (!entire) {
+                next
+            } 
             label = "[" tcplen_label ": "
             ptr = index(line, label)
             if (ptr > 0) {
@@ -2009,6 +2022,7 @@ FLAG_X=0
 FLAG_F=0
 FLAG_F2=0
 FLAG_N=0
+FLAG_E=0
 
 HEXDUMP_LENGTH=0
 ANALYSIS_LEVEL=0
@@ -2122,7 +2136,7 @@ fi
 #==============================================================================#
 # Gets options                                                                 #
 #==============================================================================#
-while getopts "H46dvwqzohVr:i:s:n:t:p:a:x:f:" flag; do
+while getopts "H46dvwqzoehVr:i:s:n:t:p:a:x:f:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -2138,6 +2152,7 @@ while getopts "H46dvwqzohVr:i:s:n:t:p:a:x:f:" flag; do
         q) FLAG_Q=1;;
         z) FLAG_Z=1;;
         o) FLAG_O=1;;
+        e) FLAG_E=1;;
         h) print_help | less -R -P " Manual page line %l (press 'h' for help or 'q' to quit)"
            exit 0;;
         V) print_version;;
@@ -2205,7 +2220,7 @@ fi
 #==============================================================================#
 if [ $RUN_MODE -eq 0 ]; then
     #### list mode ####
-    if [ $FLAG_I -eq 1 -o $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 ]; then
+    if [ $FLAG_I -eq 1 -o $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
         usage
     fi
     if [ $TIME_TYPE -eq 2 -o $TIME_TYPE -eq 3 -o $TIME_TYPE -eq 5 ]; then
@@ -2225,7 +2240,7 @@ if [ $RUN_MODE -eq 0 ]; then
     fi
 elif [ $RUN_MODE -eq 1 ]; then
     #### flow mode ####
-    if [ $FLAG_I -eq 1 -o $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 ]; then
+    if [ $FLAG_I -eq 1 -o $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 -o $FLAG_E -eq 1 ]; then
         usage
     fi
     if [ $FLAG_O -eq 1 -a $FLAG_X -eq 1 ]; then
@@ -2239,7 +2254,7 @@ elif [ $RUN_MODE -eq 1 ]; then
     fi
 elif [ $RUN_MODE -eq 2 ]; then
     #### flow mode (live capture) ####
-    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_V -eq 1 -o $FLAG_D -eq 1 -o $FLAG_X -eq 1 ]; then
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_V -eq 1 -o $FLAG_D -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
         usage
     fi
     if [ $FLAG_O -eq 1 -a $FLAG_F -eq 1 ]; then
