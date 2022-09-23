@@ -19,7 +19,7 @@ Live capture
 
 ### one mode
 
-    tcpshark -r <infile> -n <number>
+    tcpshark -r <infile> -n <number> [-e]
 
 # DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
@@ -114,6 +114,9 @@ In list mode, statistics information is displayed in each direction.
 In flow mode, can be specified up to twice.  
 About available field, see Wireshark web site.  
 https://www.wireshark.org/docs/dfref/
+
+- `-e`  
+Prints an entire information of the packet details.
 
 - `-h`  
 Prints this help page.
@@ -327,8 +330,8 @@ FYR, operation has been confirmed on the following platforms:
    (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
-The current stable release of TcpShark is 4.0.0 in Sep 23, 2022.  
-(md5: c2df7bc458f27ec512e92e5250aa44e8)
+The current stable release of TcpShark is 4.1.0 in Sep 23, 2022.  
+(md5: ab6aff2640b2538990ceca7afe14de5b)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
