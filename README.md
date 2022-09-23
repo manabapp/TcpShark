@@ -4,13 +4,18 @@
 # SYNOPSIS
 ### list mode
 
-    tcpshark -r <infile> [-H] [-t a|ad|r] [-p <port>] [-4 | -6 | -a <addr>]
-                         [-d] [-z | -f <field>]
+    tcpshark -r <infile> [-p <port>] [-4 | -6 | -a <addr>] [-H] [-t a|ad|r]
+                              [-d] [-z | -f <field>]
 
 ### flow mode
 
     tcpshark -r <infile> -s <index> [-H] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q]
-                         [-z] [-o | -x <length> | -f <field>]
+                              [-z] [-o | -x <length> | -f <field>]
+
+Live capture
+
+    tcpshark [-i <interface>] [-p <port>] [-a <addr>] [-H] [-t a|ad|dd|e|r|rs]
+                              [-w] [-q] [-z] [-o | -f <field>]
 
 ### one mode
 
@@ -28,11 +33,19 @@ to `less -R` command.
 
     $ tcpshark -r tcpdump.pcap -s 0 | less -R
 
+In flow mode for live capture, needs to run as root user.
+
 # OPTIONS
 - `-r <infile>`  
 Reads packet data from infile.  
 This utility can analyze the file captured by Wireshark, tcpdump,  
 snoop, etc.  
+
+- `-i <interface>`  
+Reads live packet captured from the network interface.  
+Network interface should match one of the names or numbers listed in  
+`tshark -D` command. If no interface is specified, the first non-  
+loopback interface is choosed.
 
 - `-s <index>`  
 Displays the specific stream in flow mode.  
@@ -314,8 +327,8 @@ FYR, operation has been confirmed on the following platforms:
    (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
-The current stable release of TcpShark is 3.1.3 in Sep 20, 2022.  
-(md5: 3f1c44bc3bf12782a91fbc72aca1d0ee)
+The current stable release of TcpShark is 4.0.0 in Sep 23, 2022.  
+(md5: c2df7bc458f27ec512e92e5250aa44e8)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
