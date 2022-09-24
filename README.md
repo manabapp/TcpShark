@@ -19,7 +19,7 @@ Live capture
 
 ### one mode
 
-    tcpshark -r <infile> -n <number> [-e]
+    tcpshark -r <infile> -n <number> [-e | -X]
 
 # DESCRIPTION
 TcpShark is network analyzing script, powered by Wireshark.  
@@ -107,6 +107,9 @@ dump. **(Wireshark 2.4.0 or newer)**
 Upper limit is 65536. If length is 0, all data is displayed.  
 NOTE: this data is TCP payload data, so not include TCP, IP, and  
 Ethernet.  
+
+- `-X`  
+Packet data is output by hexadecimal dump.
 
 - `-f <field>`  
 Specified field is displayed.  
@@ -256,32 +259,13 @@ Streams or packets are output in the following format:
                          in parentheses.
 
 ### flow mode
-TcpShark displays output of the following command as is.
+TcpShark displays packet details or hex dump from the following command  
+result:
 
-    $ tshark -r <infile> -Y "frame.number == <number>" -V
+    $ tshark -r <infile> -Y "frame.number == <number>" -V  
+    or  
+    $ tshark -r <infile> -Y "frame.number == <number>" -x  
 
-Note that TcpShark runs under the following settings:
-
-      nameres.mac_name: TRUE
-      nameres.transport_name:TRUE
-      nameres.network_name: FALSE
-      frame.generate_epoch_time: TRUE
-      vlan.summary_in_tree: FALSE
-      ip.summary_in_tree: FALSE
-      ip.use_geoip: FALSE                 (Wireshark 2.0.0 or newer)
-      ipv6.summary_in_tree: FALSE
-      tcp.summary_in_tree: FALSE
-      tcp.check_checksum: TRUE
-      tcp.desegment_tcp_streams: TRUE
-      tcp.analyze_sequence_numbers: TRUE
-      tcp.relative_sequence_numbers: TRUE
-      tcp.track_bytes_in_flight: TRUE
-      tcp.calculate_timestamps: TRUE
-      udp.summary_in_tree: FALSE
-
-For details on these options, see output of the following command:
-
-    $ tshark -G defaultprefs
 
 # ENVIRONMENT VARIABLES
 |Variable|Description|
@@ -330,8 +314,8 @@ FYR, operation has been confirmed on the following platforms:
    (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
-The current stable release of TcpShark is 4.1.0 in Sep 23, 2022.  
-(md5: ab6aff2640b2538990ceca7afe14de5b)
+The current stable release of TcpShark is 4.2.0 in Sep 25, 2022.  
+(md5: d43dda0040cd7e813da35444895efdde)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
