@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.1.0"                                                #
+VERSION="4.2.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -30,7 +30,7 @@ else
     echo "       tcpshark -r <infile> [-p <port>] [-4 | -6 | -a <addr>] [-H] [-t a|ad|r] [-z | -f <field>]" 1>&2
 fi
     echo "       tcpshark -r <infile> -s <index> [-H] [-t a|ad|dd|e|r|rs] [-v] [-w] [-q] [-z] [-o | -x <length> | -f <field>]" 1>&2
-    echo "       tcpshark -r <infile> -n <number> [-e]" 1>&2
+    echo "       tcpshark -r <infile> -n <number> [-e | -X]" 1>&2
     echo "       tcpshark -h  (Manual page)" 1>&2
     exit 1
 }
@@ -83,7 +83,7 @@ fi
     printf "                              [-w] [-q] [-z] [-o | -f <field>]\n"
     printf "\n"
     printf "    ${ACES_GRAY}<one mode>${ACES_END}\n"
-    printf "      ${ACES_BOLD}tcpshark${ACES_END} -r <infile> -n <number> [-e]\n"
+    printf "      ${ACES_BOLD}tcpshark${ACES_END} -r <infile> -n <number> [-e | -X]\n"
     printf "\n"
     printf "${ACES_BOLD}DESCRIPTION${ACES_END}\n"
     printf "    ${NAME} is network analyzing script, powered by Wireshark.\n"
@@ -174,6 +174,9 @@ fi
     printf "          Upper limit is ${ACES_BOLD}${MAX_LENGTH_LIMIT}${ACES_END}. If length is ${ACES_BOLD}0${ACES_END}, all data is displayed.\n"
     printf "          Note that this data is TCP payload data, so not include TCP, IP, and\n"
     printf "          Ethernet header fields.\n"
+    printf "\n"
+    printf "    ${ACES_BOLD}-X${ACES_END}\n"
+    printf "          Packet data is output by hexadecimal dump.\n"
     printf "\n"
     printf "    ${ACES_BOLD}-f${ACES_END} ${ACES_GRAY}<field>${ACES_END}\n"
     printf "          Specified field is displayed.\n"
@@ -322,32 +325,12 @@ fi
     printf "                         in parentheses.\n"
     printf "\n"
     printf "    ${ACES_GRAY}<one mode>${ACES_END}\n"
-    printf "      ${NAME} displays output of the following command as is.\n"
+    printf "      ${NAME} displays packet details or hex dump from the following command\n"
+    printf "      result:\n"
     printf "\n"
     printf "        ${ACES_GRAY}$ tshark -r <infile> -Y \"frame.number == <number>\" -V${ACES_END}\n"
-    printf "\n"
-    printf "      Note that ${NAME} runs under the following settings:\n"
-    printf "\n"
-    printf "          ${ACES_GRAY}nameres.mac_name: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}nameres.transport_name: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}nameres.network_name: FALSE${ACES_END}\n"
-    printf "          ${ACES_GRAY}frame.generate_epoch_time: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}vlan.summary_in_tree: FALSE${ACES_END}\n"
-    printf "          ${ACES_GRAY}ip.summary_in_tree: FALSE${ACES_END}\n"
-    printf "          ${ACES_GRAY}ip.use_geoip: FALSE                 (Wireshark 2.0.0 or newer)${ACES_END}\n"
-    printf "          ${ACES_GRAY}ipv6.summary_in_tree: FALSE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.summary_in_tree: FALSE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.check_checksum: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.desegment_tcp_streams: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.analyze_sequence_numbers: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.relative_sequence_numbers: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.track_bytes_in_flight: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}tcp.calculate_timestamps: TRUE${ACES_END}\n"
-    printf "          ${ACES_GRAY}udp.summary_in_tree: FALSE${ACES_END}\n"
-    printf "\n"
-    printf "      For details on these options, see output of the following command:\n"
-    printf "\n"
-    printf "        ${ACES_GRAY}$ tshark -G defaultprefs${ACES_END}\n"
+    printf "        or\n"
+    printf "        ${ACES_GRAY}$ tshark -r <infile> -Y \"frame.number == <number>\" -x${ACES_END}\n"
     printf "\n"
     printf "\n"
     printf "${ACES_BOLD}ENVIRONMENT VARIABLES${ACES_END}\n"
@@ -498,7 +481,7 @@ get_ftype()
 }
 
 #==============================================================================#
-# Function: Returns end one of comma separated values                          #
+# Function: Returns and one of comma separated values                          #
 #==============================================================================#
 get_value()
 {
@@ -806,7 +789,7 @@ print_header_flow()
 }
 
 #==============================================================================#
-# Function: Analyzes end print packets for list mode                           #
+# Function: Analyzes and print packets for list mode                           #
 #==============================================================================#
 tcp_stream_list()
 {
@@ -1770,7 +1753,7 @@ tcp_stream_flow()
 }
 
 #==============================================================================#
-# Function: Analyzes end print a packet for one mode                           #
+# Function: Analyzes and print a packet for one mode                           #
 #==============================================================================#
 tcp_stream_one()
 {
@@ -1988,6 +1971,108 @@ tcp_stream_one()
     return $?
 }
 
+#==============================================================================#
+# Function: Prints a hex dump of packet data for one mode                      #
+#                                                                              #
+#  e.g. tshark -x format                                                       #
+#             1         2         3         4         5         6         7    #  
+#   123456789012345678901234567890123456789012345678901234567890123456789012   #
+#   0000  1a 3e ef 2c 65 64 ca 58 d2 77 8d 9a 08 00 45 12   .>.,ed.X.w....E.   #
+#==============================================================================#
+tcp_stream_one_hex()
+{
+    "$AWK_COMMAND" -v os_type="$OS_TYPE" \
+                   -v appearance="$APPEARANCE" '
+    BEGIN {
+        if (os_type == 3)
+            RS = "\r\n"
+        line_num = 0
+        
+        ### ANSI Color Escape Sequences ###
+        if (appearance == 0) {
+            ACES_BGGRAY  = ""
+            ACES_BOLD    = ""
+            ACES_RED     = ""
+            ACES_GREEN   = ""
+            ACES_YELLOW  = ""
+            ACES_BLUE    = ""
+            ACES_MAGENTA = ""
+            ACES_CYAN    = ""
+            ACES_GRAY    = ""
+            ACES_END     = ""
+        }
+        else if (appearance == 1) {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;97m"
+            ACES_RED     = "\033[1;91m"
+            ACES_GREEN   = "\033[1;92m"
+            ACES_YELLOW  = "\033[1;93m"
+            ACES_BLUE    = "\033[1;94m"
+            ACES_MAGENTA = "\033[1;95m"
+            ACES_CYAN    = "\033[1;96m"
+            ACES_GRAY    = "\033[37m"
+            ACES_END     = "\033[0m"
+        }
+        else {
+            ACES_BGGRAY  = "\033[7m"
+            ACES_BOLD    = "\033[1;30m"
+            ACES_RED     = "\033[1;31m"
+            ACES_GREEN   = "\033[1;32m"
+            ACES_YELLOW  = "\033[1;33m"
+            ACES_BLUE    = "\033[1;34m"
+            ACES_MAGENTA = "\033[1;35m"
+            ACES_CYAN    = "\033[1;36m"
+            ACES_GRAY    = "\033[90m"
+            ACES_END     = "\033[0m"
+        }
+    }
+    {
+        line = $0
+        len = length(line)
+        
+        if (len < 57) {
+            printf("\n")
+            next
+        }
+        line_num++
+        
+        printf("%s%05d:%s ", ACES_GRAY, strtonum("0x" substr(line, 1, 4)), ACES_END)
+        for (i = 0; i < 4; i++) {
+            printf("%s", substr(line, i * 3 + 7, 2))
+        }
+        printf(" ")
+        for (i = 0; i < 4; i++) {
+            printf("%s", substr(line, i * 3 + 19, 2))
+        }
+        printf("  ")
+        for (i = 0; i < 4; i++) {
+            printf("%s", substr(line, i * 3 + 31, 2))
+        }
+        printf(" ")
+        for (i = 0; i < 4; i++) {
+            printf("%s", substr(line, i * 3 + 43, 2))
+        }
+        printf("    %s", ACES_GRAY)
+        if (len <= 64) {
+            printf("%s", substr(line, 57))
+        }
+        else {
+            printf("%s", substr(line, 57, 8))
+            printf(" ")
+            printf("%s", substr(line, 65))
+        }
+        printf("%s\n", ACES_END)
+    };
+    END {
+        if (line_num == 0) {
+            printf("%sWARNING%s: No packet data.\n", ACES_YELLOW, ACES_END) > "/dev/stderr"
+            exit(1)
+        }
+        exit(0)
+    }'
+    
+    return $?
+}
 
 #==============================================================================#
 # Global variables                                                             #
@@ -2019,6 +2104,7 @@ FLAG_P=0
 FLAG_A=0
 FLAG_O=0
 FLAG_X=0
+FLAG_XX=0
 FLAG_F=0
 FLAG_F2=0
 FLAG_N=0
@@ -2136,7 +2222,7 @@ fi
 #==============================================================================#
 # Gets options                                                                 #
 #==============================================================================#
-while getopts "H46dvwqzoehVr:i:s:n:t:p:a:x:f:" flag; do
+while getopts "H46dvwqzoeXhVr:i:s:n:t:p:a:x:f:" flag; do
     case $flag in
         \?) usage;;
         H) FLAG_H=1;;
@@ -2153,6 +2239,7 @@ while getopts "H46dvwqzoehVr:i:s:n:t:p:a:x:f:" flag; do
         z) FLAG_Z=1;;
         o) FLAG_O=1;;
         e) FLAG_E=1;;
+        X) FLAG_XX=1;;
         h) print_help | less -R -P " Manual page line %l (press 'h' for help or 'q' to quit)"
            exit 0;;
         V) print_version;;
@@ -2220,7 +2307,7 @@ fi
 #==============================================================================#
 if [ $RUN_MODE -eq 0 ]; then
     #### list mode ####
-    if [ $FLAG_I -eq 1 -o $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_I -eq 1 -o $FLAG_V -eq 1 -o $FLAG_W -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_O -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 -o $FLAG_XX -eq 1 ]; then
         usage
     fi
     if [ $TIME_TYPE -eq 2 -o $TIME_TYPE -eq 3 -o $TIME_TYPE -eq 5 ]; then
@@ -2240,7 +2327,7 @@ if [ $RUN_MODE -eq 0 ]; then
     fi
 elif [ $RUN_MODE -eq 1 ]; then
     #### flow mode ####
-    if [ $FLAG_I -eq 1 -o $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_I -eq 1 -o $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_D -eq 1 -o $FLAG_P -eq 1 -o $FLAG_A -eq 1 -o $FLAG_E -eq 1 -o $FLAG_XX -eq 1 ]; then
         usage
     fi
     if [ $FLAG_O -eq 1 -a $FLAG_X -eq 1 ]; then
@@ -2254,7 +2341,7 @@ elif [ $RUN_MODE -eq 1 ]; then
     fi
 elif [ $RUN_MODE -eq 2 ]; then
     #### flow mode (live capture) ####
-    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_V -eq 1 -o $FLAG_D -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 ]; then
+    if [ $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 -o $FLAG_V -eq 1 -o $FLAG_D -eq 1 -o $FLAG_X -eq 1 -o $FLAG_E -eq 1 -o $FLAG_XX -eq 1 ]; then
         usage
     fi
     if [ $FLAG_O -eq 1 -a $FLAG_F -eq 1 ]; then
@@ -2718,7 +2805,11 @@ else
     if [ $? -ne 0 ]; then
         exit 1
     fi
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$TSHARK_FILTER" -c $FRAME_NUMBER -V $TSHARK_MAIN_OPTIONS | tcp_stream_one
+    if [ $FLAG_XX -eq 1 ]; then
+        $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$TSHARK_FILTER" -c $FRAME_NUMBER -x $TSHARK_FIND_OPTIONS | tcp_stream_one_hex
+    else 
+        $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$TSHARK_FILTER" -c $FRAME_NUMBER -V $TSHARK_MAIN_OPTIONS | tcp_stream_one
+    fi
 fi
 
 exit $?
