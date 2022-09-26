@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.0"                                                #
+VERSION="4.2.1"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -90,7 +90,6 @@ fi
     printf "    This utility displays visually TCP stream for ease of analysis.\n"
     printf "\n"
     printf "    How to use:\n"
-   #printf "---------0---------0---------0---------0---------0---------0---------0---------0"
     printf "      First, lists TCP streams in list mode.\n"
     printf "      Next, specifies the index of stream and looks over the packet flow in\n"
     printf "      flow mode. In addition, you can analyze as you like by piping the result\n"
@@ -341,7 +340,6 @@ fi
 if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
     printf "    ${ACES_BOLD}TCPSHARK_EXECUTION_USER${ACES_END}\n"
     printf "          Execution user name to use instead of root.\n"
-   #printf "---------0---------0---------0---------0---------0---------0---------0---------0"
     printf "          If you run as root user, ${NAME} internally executes tshark as\n"
     printf "          the user specified in this variable.\n"
     printf "\n"
@@ -1803,31 +1801,20 @@ tcp_stream_one()
             ACES_END     = "\033[0m"
         }
         
-        tcpindex_label = "Stream index"
-        tcplen_label   = "TCP Segment Len"
-        tcpopt_label   = "TCP Option"
+        tcpindex_label = "    [Stream index: "
+        tcpflags_label = "    Flags: "
+        tcplen_label   = "    [TCP Segment Len: "
+        tcpopt_label   = "    TCP Option - "
         
-        flag_labels["fin"]   = "Fin"
-        flag_labels["syn"]   = "Syn"
-        flag_labels["reset"] = "Reset"
-        flag_labels["push"]  = "Push"
-        flag_labels["ack"]   = "Acknowledgment"
-        flag_labels["urg"]   = "Urgent"
-        flag_labels["ecn"]   = "ECN-Echo"
-        flag_labels["cwr"]   = "Congestion Window Reduced (CWR)"
-        flag_labels["ns"]    = "Nonce"
-        flag_labels["res"]   = "Reserved"
-        
-        aces_colors["fin"]   = ACES_GREEN
-        aces_colors["syn"]   = ACES_CYAN
-        aces_colors["reset"] = ACES_RED
-        aces_colors["push"]  = ACES_BOLD
-        aces_colors["ack"]   = ACES_GRAY
-        aces_colors["urg"]   = ACES_MAGENTA
-        aces_colors["ecn"]   = ACES_YELLOW
-        aces_colors["cwr"]   = ACES_MAGENTA
-        aces_colors["ns"]    = ACES_YELLOW
-        aces_colors["res"]   = ACES_RED
+        flag_colors["FIN"] = ACES_GREEN
+        flag_colors["SYN"] = ACES_CYAN
+        flag_colors["RST"] = ACES_RED
+        flag_colors["PSH"] = ACES_BOLD
+        flag_colors["ACK"] = ACES_GRAY
+        flag_colors["URG"] = ACES_MAGENTA
+        flag_colors["ECN"] = ACES_YELLOW
+        flag_colors["CWR"] = ACES_MAGENTA
+        flag_colors["NS"]  = ACES_YELLOW
         
         option_labels["nop"]       = "No-Operation (NOP)"
         option_labels["eol"]       = "End of Option List (EOL)"
@@ -1889,24 +1876,30 @@ tcp_stream_one()
             printf("%s%s %s\n", ACES_BGGRAY, line, ACES_END)
             next
         }
-        if (entire) {
-            for (key in flag_labels) {
-                label = " = " flag_labels[key] ": Set"
-                if (index(line, label) > 0) {
-                   printf("%s%s%s\n", aces_colors[key], line, ACES_END)
-                   next
+        if (substr(line, len, 1) == ")") {
+            ptr = index(line, "(")
+            if (index(line, tcpflags_label) > 0 && ptr > 0) {
+                printf("%s", substr(line, 1, ptr))
+                array_num = split(substr(line, ptr + 1, len - ptr -1), array, ", ")
+                for (i = 1; i <= array_num; i++) {
+                    if (i > 1)
+                        printf(", ")
+                    flag = array[i]
+                    printf("%s%s%s", flag in flag_colors ? flag_colors[flag] : ACES_RED, flag, ACES_END)
                 }
-                label = " = " flag_labels[key] ": Not set"
-                if (index(line, label) > 0) {
-                   printf("%s%s%s\n", ACES_GRAY, line, ACES_END)
-                   next
-                }
+                printf(")\n")
+                next
             }
         }
-        label = tcpopt_label " - "
-        if (index(line, label) > 0) {
+        opt_num = split(e_option_kind, array3, ",")
+        for (i = 1; i <= opt_num; i++) {
+            if (array3[i] == "0")      optset["eol"]      = 1
+            else if (array3[i] == "1") optset["nop"]      = 1
+            else if (array3[i] == "2") optset["mss"]      = 1
+        }
+        if (index(line, tcpopt_label) > 0) {
             for (key in option_labels) {
-                label = tcpopt_label " - " option_labels[key]
+                label = tcpopt_label option_labels[key]
                 if (index(line, label) > 0) {
                     printf("%s\n", line)
                     next
@@ -1936,18 +1929,16 @@ tcp_stream_one()
             if (!entire) {
                 next
             } 
-            label = "[" tcplen_label ": "
-            ptr = index(line, label)
+            ptr = index(line, tcplen_label)
             if (ptr > 0) {
-                ptr += length(label)
+                ptr += length(tcplen_label)
                 len_len = length(line) - ptr
                 printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
                 next
             }
-            label = "[" tcpindex_label ": "
-            ptr = index(line, label)
+            ptr = index(line, tcpindex_label)
             if (ptr > 0) {
-                ptr += length(label)
+                ptr += length(tcpindex_label)
                 len_len = length(line) - ptr
                 printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr - 1), ACES_END, ACES_BOLD, substr(line, ptr, len_len), ACES_END, ACES_GRAY, ACES_END)
                 next
@@ -2037,35 +2028,27 @@ tcp_stream_one_hex()
         line_num++
         
         printf("%s%05d:%s ", ACES_GRAY, strtonum("0x" substr(line, 1, 4)), ACES_END)
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
             printf("%s", substr(line, i * 3 + 7, 2))
-        }
         printf(" ")
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
             printf("%s", substr(line, i * 3 + 19, 2))
-        }
         printf("  ")
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
             printf("%s", substr(line, i * 3 + 31, 2))
-        }
         printf(" ")
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
             printf("%s", substr(line, i * 3 + 43, 2))
-        }
-        printf("    %s", ACES_GRAY)
-        if (len <= 64) {
-            printf("%s", substr(line, 57))
-        }
-        else {
-            printf("%s", substr(line, 57, 8))
-            printf(" ")
-            printf("%s", substr(line, 65))
-        }
-        printf("%s\n", ACES_END)
+        printf("    ")
+        if (len <= 64)
+            printf("%s%s%s", ACES_GRAY, substr(line, 57), ACES_END)
+        else
+            printf("%s%s %s%s", ACES_GRAY, substr(line, 57, 8), substr(line, 65), ACES_END)
+        printf("\n")
     };
     END {
         if (line_num == 0) {
-            printf("%sWARNING%s: No packet data.\n", ACES_YELLOW, ACES_END) > "/dev/stderr"
+            printf("%sWARNING%s: No such packet.\n", ACES_YELLOW, ACES_END) > "/dev/stderr"
             exit(1)
         }
         exit(0)
