@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.1"                                                #
+VERSION="4.2.2"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -639,7 +639,7 @@ print_header_flow()
     printf "\n"
     if [ $FLAG_R -eq 1 ]; then
         printf "TCP Stream flow\n"
-    else 
+    else
         printf "TCP Stream flow ${ACES_GRAY}-${ACES_END} ${ACES_GREEN}Live capture${ACES_END} ${ACES_GRAY}(Ctrl+C to exit)${ACES_END}\n"
     fi
     if [ $FLAG_R -eq 1 ]; then
@@ -815,19 +815,19 @@ tcp_stream_list()
         if (!indexes[i2])
             return -1
         
-        rtime1 = streams[i1, "rtime"]
-        rtime2 = streams[i2, "rtime"]
+        rtime1   = streams[i1, "rtime"]
+        rtime2   = streams[i2, "rtime"]
         packets1 = streams[i1, "l_packets"] + streams[i1, "r_packets"]
         packets2 = streams[i2, "l_packets"] + streams[i2, "r_packets"]
-        bytes1 = streams[i1, "l_bytes"] + streams[i1, "r_bytes"]
-        bytes2 = streams[i2, "l_bytes"] + streams[i2, "r_bytes"]
+        bytes1   = streams[i1, "l_bytes"]   + streams[i1, "r_bytes"]
+        bytes2   = streams[i2, "l_bytes"]   + streams[i2, "r_bytes"]
         
         if (packets1 > packets2)      return -1
         else if (packets1 < packets2) return 1
-        else if (bytes1 > bytes2) return -1
-        else if (bytes1 < bytes2) return 1
-        else if (rtime1 < rtime2) return -1
-        else                      return 1
+        else if (bytes1 > bytes2)     return -1
+        else if (bytes1 < bytes2)     return 1
+        else if (rtime1 < rtime2)     return -1
+        else                          return 1
     }
     function colored_port(port) {
         if (port < 1024)
@@ -835,12 +835,6 @@ tcp_stream_list()
         if (port >= 32768)
             return sprintf("%s%-5d%s", ACES_GRAY, port, ACES_END)
         return sprintf("%-5d", port)
-    }
-    function print_analysis(cnt, aces_color) {
-        if (cnt > 0)
-            printf(" %s%4d%s", aces_color, cnt, ACES_END);
-        else
-            printf(" %s%4d%s", ACES_GRAY, cnt, ACES_END);
     }
     function prefix10(str) {
         if (length(str) > 10) {
@@ -931,34 +925,34 @@ tcp_stream_list()
             ACES_END     = "\033[0m"
         }
         
-        aces_colors["fin"]   = ACES_GREEN
-        aces_colors["syn"]   = ACES_CYAN
-        aces_colors["reset"] = ACES_RED
-        aces_colors["push"]  = ACES_BOLD
-        aces_colors["ack"]   = ACES_GRAY
-        aces_colors["urg"]   = ACES_MAGENTA
-        aces_colors["ecn"]   = ACES_YELLOW
-        aces_colors["cwr"]   = ACES_MAGENTA
-        aces_colors["ns"]    = ACES_YELLOW
+        tcpflag_colors["FIN"] = ACES_GREEN
+        tcpflag_colors["SYN"] = ACES_CYAN
+        tcpflag_colors["RST"] = ACES_RED
+        tcpflag_colors["PSH"] = ACES_BOLD
+        tcpflag_colors["ACK"] = ACES_GRAY
+        tcpflag_colors["URG"] = ACES_MAGENTA
+        tcpflag_colors["ECN"] = ACES_YELLOW
+        tcpflag_colors["CWR"] = ACES_MAGENTA
+        tcpflag_colors["NS"]  = ACES_YELLOW
         
-        aces_colors["ret"] = ACES_GREEN
-        aces_colors["fst"] = ACES_CYAN
-        aces_colors["spu"] = ACES_CYAN
-        aces_colors["dup"] = ACES_BLUE
-        aces_colors["out"] = ACES_BOLD
-        aces_colors["los"] = ACES_RED
-        aces_colors["alo"] = ACES_RED
-        aces_colors["ful"] = ACES_MAGENTA
-        aces_colors["wup"] = ACES_YELLOW
-        aces_colors["zro"] = ACES_BOLD
-        aces_colors["zrp"] = ACES_MAGENTA
-        aces_colors["zpa"] = ACES_YELLOW
-        aces_colors["kep"] = ACES_MAGENTA
-        aces_colors["kpa"] = ACES_YELLOW
-        aces_colors["tfo"] = ACES_BOLD
-        aces_colors["afo"] = ACES_MAGENTA
-        aces_colors["ifo"] = ACES_YELLOW
-        aces_colors["prt"] = ACES_BOLD
+        analysis_colors["ret"] = ACES_GREEN
+        analysis_colors["fst"] = ACES_CYAN
+        analysis_colors["spu"] = ACES_CYAN
+        analysis_colors["dup"] = ACES_BLUE
+        analysis_colors["out"] = ACES_BOLD
+        analysis_colors["los"] = ACES_RED
+        analysis_colors["alo"] = ACES_RED
+        analysis_colors["ful"] = ACES_MAGENTA
+        analysis_colors["wup"] = ACES_YELLOW
+        analysis_colors["zro"] = ACES_BOLD
+        analysis_colors["zrp"] = ACES_MAGENTA
+        analysis_colors["zpa"] = ACES_YELLOW
+        analysis_colors["kep"] = ACES_MAGENTA
+        analysis_colors["kpa"] = ACES_YELLOW
+        analysis_colors["tfo"] = ACES_BOLD
+        analysis_colors["afo"] = ACES_MAGENTA
+        analysis_colors["ifo"] = ACES_YELLOW
+        analysis_colors["prt"] = ACES_BOLD
         
         if (analysis) {
             i = 0
@@ -1208,15 +1202,15 @@ tcp_stream_list()
             
             #### FLAGS ####
             printf("  [");
-            if (streams[i, "flags_fin"])   printf("%sF%s", aces_colors["fin"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_syn"])   printf("%sS%s", aces_colors["syn"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_reset"]) printf("%sR%s", aces_colors["reset"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_push"])  printf("%sP%s", aces_colors["push"],  ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_ack"])   printf("%sA%s", aces_colors["ack"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_urg"])   printf("%sU%s", aces_colors["urg"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_ecn"])   printf("%sE%s", aces_colors["ecn"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_cwr"])   printf("%sC%s", aces_colors["cwr"],   ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
-            if (streams[i, "flags_ns"])    printf("%sN%s", aces_colors["ns"],    ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_fin"])   printf("%sF%s", tcpflag_colors["FIN"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_syn"])   printf("%sS%s", tcpflag_colors["SYN"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_reset"]) printf("%sR%s", tcpflag_colors["RST"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_push"])  printf("%sP%s", tcpflag_colors["PSH"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ack"])   printf("%sA%s", tcpflag_colors["ACK"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_urg"])   printf("%sU%s", tcpflag_colors["URG"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ecn"])   printf("%sE%s", tcpflag_colors["ECN"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_cwr"])   printf("%sC%s", tcpflag_colors["CWR"], ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
+            if (streams[i, "flags_ns"])    printf("%sN%s", tcpflag_colors["NS"],  ACES_END); else printf("%s-%s", ACES_GRAY, ACES_END);
             printf("]");
             
             if (analysis) {
@@ -1224,7 +1218,8 @@ tcp_stream_list()
                 printf(" ");
                 for (j = 0; j < analysis_num; j++) {
                     key = analysis_keys[j]
-                    print_analysis(streams[i, key], aces_colors[key]);
+                    cnt = streams[i, key]
+                    printf(" %s%4d%s", cnt > 0 ? analysis_colors[key] : ACES_GRAY, cnt, ACES_END);
                 }
             }
             else if (custom) {
@@ -1261,7 +1256,7 @@ tcp_stream_list()
             exit(1)
         }
         exit(0)
-    }'
+    } '
     
     return $?
 }
@@ -1410,34 +1405,34 @@ tcp_stream_flow()
             ACES_END     = "\033[0m"
         }
         
-        aces_colors["fin"]   = ACES_GREEN
-        aces_colors["syn"]   = ACES_CYAN
-        aces_colors["reset"] = ACES_RED
-        aces_colors["push"]  = ACES_BOLD
-        aces_colors["ack"]   = ACES_GRAY
-        aces_colors["urg"]   = ACES_MAGENTA
-        aces_colors["ecn"]   = ACES_YELLOW
-        aces_colors["cwr"]   = ACES_MAGENTA
-        aces_colors["ns"]    = ACES_YELLOW
+        tcpflag_colors["FIN"] = ACES_GREEN
+        tcpflag_colors["SYN"] = ACES_CYAN
+        tcpflag_colors["RST"] = ACES_RED
+        tcpflag_colors["PSH"] = ACES_BOLD
+        tcpflag_colors["ACK"] = ACES_GRAY
+        tcpflag_colors["URG"] = ACES_MAGENTA
+        tcpflag_colors["ECN"] = ACES_YELLOW
+        tcpflag_colors["CWR"] = ACES_MAGENTA
+        tcpflag_colors["NS"]  = ACES_YELLOW
         
-        aces_colors["ret"] = ACES_GREEN
-        aces_colors["fst"] = ACES_CYAN
-        aces_colors["spu"] = ACES_CYAN
-        aces_colors["dup"] = ACES_BLUE
-        aces_colors["out"] = ACES_BOLD
-        aces_colors["los"] = ACES_RED
-        aces_colors["alo"] = ACES_RED
-        aces_colors["ful"] = ACES_MAGENTA
-        aces_colors["wup"] = ACES_YELLOW
-        aces_colors["zro"] = ACES_BOLD
-        aces_colors["zrp"] = ACES_MAGENTA
-        aces_colors["zpa"] = ACES_YELLOW
-        aces_colors["kep"] = ACES_MAGENTA
-        aces_colors["kpa"] = ACES_YELLOW
-        aces_colors["tfo"] = ACES_BOLD
-        aces_colors["afo"] = ACES_MAGENTA
-        aces_colors["ifo"] = ACES_YELLOW
-        aces_colors["prt"] = ACES_BOLD
+        analysis_colors["ret"] = ACES_GREEN
+        analysis_colors["fst"] = ACES_CYAN
+        analysis_colors["spu"] = ACES_CYAN
+        analysis_colors["dup"] = ACES_BLUE
+        analysis_colors["out"] = ACES_BOLD
+        analysis_colors["los"] = ACES_RED
+        analysis_colors["alo"] = ACES_RED
+        analysis_colors["ful"] = ACES_MAGENTA
+        analysis_colors["wup"] = ACES_YELLOW
+        analysis_colors["zro"] = ACES_BOLD
+        analysis_colors["zrp"] = ACES_MAGENTA
+        analysis_colors["zpa"] = ACES_YELLOW
+        analysis_colors["kep"] = ACES_MAGENTA
+        analysis_colors["kpa"] = ACES_YELLOW
+        analysis_colors["tfo"] = ACES_BOLD
+        analysis_colors["afo"] = ACES_MAGENTA
+        analysis_colors["ifo"] = ACES_YELLOW
+        analysis_colors["prt"] = ACES_BOLD
         
         if (analysis) {
             i = 0
@@ -1615,15 +1610,15 @@ tcp_stream_flow()
         #### FLAGS ####
         cnt = 0
         flags_label = "["
-        if (e_flags["fin"]   != "" && e_flags["fin"]   != 0) { cnt++; flags_label = flags_label aces_colors["fin"]   "F" ACES_END }
-        if (e_flags["syn"]   != "" && e_flags["syn"]   != 0) { cnt++; flags_label = flags_label aces_colors["syn"]   "S" ACES_END }
-        if (e_flags["reset"] != "" && e_flags["reset"] != 0) { cnt++; flags_label = flags_label aces_colors["reset"] "R" ACES_END }
-        if (e_flags["push"]  != "" && e_flags["push"]  != 0) { cnt++; flags_label = flags_label aces_colors["push"]  "P" ACES_END }
-        if (e_flags["ack"]   != "" && e_flags["ack"]   != 0) { cnt++; flags_label = flags_label aces_colors["ack"]   "A" ACES_END }
-        if (e_flags["urg"]   != "" && e_flags["urg"]   != 0) { cnt++; flags_label = flags_label aces_colors["urg"]   "U" ACES_END }
-        if (e_flags["ecn"]   != "" && e_flags["ecn"]   != 0) { cnt++; flags_label = flags_label aces_colors["ecn"]   "E" ACES_END }
-        if (e_flags["cwr"]   != "" && e_flags["cwr"]   != 0) { cnt++; flags_label = flags_label aces_colors["cwr"]   "C" ACES_END }
-        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) { cnt++; flags_label = flags_label aces_colors["ns"]    "N" ACES_END }
+        if (e_flags["fin"]   != "" && e_flags["fin"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["FIN"] "F" ACES_END }
+        if (e_flags["syn"]   != "" && e_flags["syn"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["SYN"] "S" ACES_END }
+        if (e_flags["reset"] != "" && e_flags["reset"] != 0) { cnt++; flags_label = flags_label tcpflag_colors["RST"] "R" ACES_END }
+        if (e_flags["push"]  != "" && e_flags["push"]  != 0) { cnt++; flags_label = flags_label tcpflag_colors["PSH"] "P" ACES_END }
+        if (e_flags["ack"]   != "" && e_flags["ack"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["ACK"] "A" ACES_END }
+        if (e_flags["urg"]   != "" && e_flags["urg"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["URG"] "U" ACES_END }
+        if (e_flags["ecn"]   != "" && e_flags["ecn"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["ECN"] "E" ACES_END }
+        if (e_flags["cwr"]   != "" && e_flags["cwr"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["CWR"] "C" ACES_END }
+        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) { cnt++; flags_label = flags_label tcpflag_colors["NS"]  "N" ACES_END }
         if (cnt == 0)      flags_label = flags_label "]      "
         else if (cnt == 1) flags_label = flags_label "]     "
         else if (cnt == 2) flags_label = flags_label "]    "
@@ -1699,7 +1694,7 @@ tcp_stream_flow()
                 if (e_analysis[key] != "" && e_analysis[key] != 0) {
                     if (cnt > 0)
                         printf("%s,%s", ACES_GRAY, ACES_END);
-                    printf("%s%s%s", aces_colors[key], key, ACES_END);
+                    printf("%s%s%s", analysis_colors[key], key, ACES_END);
                     cnt++
                 }
             }
@@ -1745,7 +1740,7 @@ tcp_stream_flow()
     };
     END {
         exit(0)
-    }'
+    } '
     
     return $?
 }
@@ -1806,15 +1801,15 @@ tcp_stream_one()
         tcplen_label   = "    [TCP Segment Len: "
         tcpopt_label   = "    TCP Option - "
         
-        flag_colors["FIN"] = ACES_GREEN
-        flag_colors["SYN"] = ACES_CYAN
-        flag_colors["RST"] = ACES_RED
-        flag_colors["PSH"] = ACES_BOLD
-        flag_colors["ACK"] = ACES_GRAY
-        flag_colors["URG"] = ACES_MAGENTA
-        flag_colors["ECN"] = ACES_YELLOW
-        flag_colors["CWR"] = ACES_MAGENTA
-        flag_colors["NS"]  = ACES_YELLOW
+        tcpflag_colors["FIN"] = ACES_GREEN
+        tcpflag_colors["SYN"] = ACES_CYAN
+        tcpflag_colors["RST"] = ACES_RED
+        tcpflag_colors["PSH"] = ACES_BOLD
+        tcpflag_colors["ACK"] = ACES_GRAY
+        tcpflag_colors["URG"] = ACES_MAGENTA
+        tcpflag_colors["ECN"] = ACES_YELLOW
+        tcpflag_colors["CWR"] = ACES_MAGENTA
+        tcpflag_colors["NS"]  = ACES_YELLOW
         
         option_labels["nop"]       = "No-Operation (NOP)"
         option_labels["eol"]       = "End of Option List (EOL)"
@@ -1843,24 +1838,24 @@ tcp_stream_one()
         analysis_msgs["ifo"] = "TCP SYN-ACK ignoring TFO data"
         analysis_msgs["prt"] = "A new tcp session is started with the same ports as an earlier session in this trace"
         
-        aces_colors["ret"] = ACES_GREEN
-        aces_colors["fst"] = ACES_CYAN
-        aces_colors["spu"] = ACES_CYAN
-        aces_colors["dup"] = ACES_BLUE
-        aces_colors["out"] = ACES_BOLD
-        aces_colors["los"] = ACES_RED
-        aces_colors["alo"] = ACES_RED
-        aces_colors["ful"] = ACES_MAGENTA
-        aces_colors["wup"] = ACES_YELLOW
-        aces_colors["zro"] = ACES_BOLD
-        aces_colors["zrp"] = ACES_MAGENTA
-        aces_colors["zpa"] = ACES_YELLOW
-        aces_colors["kep"] = ACES_MAGENTA
-        aces_colors["kpa"] = ACES_YELLOW
-        aces_colors["tfo"] = ACES_BOLD
-        aces_colors["afo"] = ACES_MAGENTA
-        aces_colors["ifo"] = ACES_YELLOW
-        aces_colors["prt"] = ACES_BOLD
+        analysis_colors["ret"] = ACES_GREEN
+        analysis_colors["fst"] = ACES_CYAN
+        analysis_colors["spu"] = ACES_CYAN
+        analysis_colors["dup"] = ACES_BLUE
+        analysis_colors["out"] = ACES_BOLD
+        analysis_colors["los"] = ACES_RED
+        analysis_colors["alo"] = ACES_RED
+        analysis_colors["ful"] = ACES_MAGENTA
+        analysis_colors["wup"] = ACES_YELLOW
+        analysis_colors["zro"] = ACES_BOLD
+        analysis_colors["zrp"] = ACES_MAGENTA
+        analysis_colors["zpa"] = ACES_YELLOW
+        analysis_colors["kep"] = ACES_MAGENTA
+        analysis_colors["kpa"] = ACES_YELLOW
+        analysis_colors["tfo"] = ACES_BOLD
+        analysis_colors["afo"] = ACES_MAGENTA
+        analysis_colors["ifo"] = ACES_YELLOW
+        analysis_colors["prt"] = ACES_BOLD
     };
     {
         line = $0
@@ -1885,7 +1880,7 @@ tcp_stream_one()
                     if (i > 1)
                         printf(", ")
                     flag = array[i]
-                    printf("%s%s%s", flag in flag_colors ? flag_colors[flag] : ACES_RED, flag, ACES_END)
+                    printf("%s%s%s", flag in tcpflag_colors ? tcpflag_colors[flag] : ACES_RED, flag, ACES_END)
                 }
                 printf(")\n")
                 next
@@ -1914,7 +1909,7 @@ tcp_stream_one()
                 ptr = index(line, label)
                 if (ptr > 0) {
                    msg_len = length(analysis_msgs[key])
-                   printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, aces_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
+                   printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, analysis_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
                    next
                 }
             }
@@ -1928,7 +1923,7 @@ tcp_stream_one()
         if (substr(line, len, 1) == "]") {
             if (!entire) {
                 next
-            } 
+            }
             ptr = index(line, tcplen_label)
             if (ptr > 0) {
                 ptr += length(tcplen_label)
@@ -1957,7 +1952,7 @@ tcp_stream_one()
             exit(1)
         }
         exit(0)
-    }'
+    } '
     
     return $?
 }
@@ -2052,7 +2047,7 @@ tcp_stream_one_hex()
             exit(1)
         }
         exit(0)
-    }'
+    } '
     
     return $?
 }
@@ -2095,7 +2090,7 @@ FLAG_E=0
 
 HEXDUMP_LENGTH=0
 ANALYSIS_LEVEL=0
-DISPLAY_VENDOR=0
+DISPLAY_VENDOR=0          # 0:False, 1:True(resolved vender name is displayed)
 TSHARK_INFILE=""
 TSHARK_INTERFACE=""
 TSHARK_FILTER=""
@@ -2105,10 +2100,10 @@ TSHARK_FIND_OPTIONS=""
 TSHARK_MAIN_OPTIONS=""
 CUSTOM_FIELD=""
 CUSTOM_FIELD2=""
-CUSTOM_FTYPE=0
+CUSTOM_FTYPE=0            # 0:ohter, 1:integer, 2:float
 CUSTOM_COLUMN=0
 CUSTOM_COLUMN2=0
-TIME_TYPE=0
+TIME_TYPE=0               # 0:a, 1:ad, 2:dd, 3:e, 4:r, 5:rs
 FILTER_PORT=0
 FILTER_ADDR=""
 STREAM_INDEX=0
@@ -2426,7 +2421,7 @@ if [ $FLAG_X -eq 1 ]; then
 fi
 
 #==============================================================================#
-# Builds tshark's filter                                                       #
+# Builds tshark filter                                                         #
 #==============================================================================#
 TSHARK_FILTER="tcp"
 TSHARK_CAPTURE_FILTER="tcp"
@@ -2465,7 +2460,7 @@ elif [ $RUN_MODE -eq 2 ]; then
 else
     #### one mode ####
     TSHARK_FILTER="frame.number == $FRAME_NUMBER"
-fi  
+fi
 
 #==============================================================================#
 # Checks option value                                                          #
@@ -2503,7 +2498,7 @@ if [ $FLAG_F2 -eq 1 ]; then
 fi
 
 #==============================================================================#
-# Builds tshark's fields list                                                  #
+# Builds tshark fields list                                                    #
 #==============================================================================#
 if [ $RUN_MODE -eq 0 ]; then
     #### list mode ####
@@ -2644,11 +2639,11 @@ elif [ $RUN_MODE -le 2 ]; then
             TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Protocol"
             TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Info"
         fi
-    fi 
-fi 
+    fi
+fi
 
 #==============================================================================#
-# Builds tshark's option parameter                                             #
+# Builds tshark option parameter                                               #
 #==============================================================================#
 TSHARK_FIND_OPTIONS="-o nameres.mac_name:FALSE              \
                      -o nameres.transport_name:FALSE        \
@@ -2783,14 +2778,9 @@ elif [ $RUN_MODE -eq 2 ]; then
 else
     #### one mode ####
     printf "Finding packet...\r" 1>&2
-    # Dummy search to check frame number
-    $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -Y "$TSHARK_FILTER" -c 1 $TSHARK_FIND_OPTIONS > /dev/null
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
     if [ $FLAG_XX -eq 1 ]; then
         $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$TSHARK_FILTER" -c $FRAME_NUMBER -x $TSHARK_FIND_OPTIONS | tcp_stream_one_hex
-    else 
+    else
         $PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -l -Y "$TSHARK_FILTER" -c $FRAME_NUMBER -V $TSHARK_MAIN_OPTIONS | tcp_stream_one
     fi
 fi
