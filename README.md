@@ -314,8 +314,8 @@ FYR, operation has been confirmed on the following platforms:
    (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
-The current stable release of TcpShark is 4.2.2 in Sep 27, 2022.  
-(md5: cc8a859dc667f6aac5c9a6ac8d32b22e)
+The current stable release of TcpShark is 4.2.3 in Sep 27, 2022.  
+(md5: 95fe09d689de9198e670f5a7552c3951)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
