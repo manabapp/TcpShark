@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.2"                                                #
+VERSION="4.2.3"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -2423,13 +2423,13 @@ fi
 #==============================================================================#
 # Builds tshark filter                                                         #
 #==============================================================================#
-TSHARK_FILTER="tcp"
+TSHARK_FILTER="tcp.stream"
 TSHARK_CAPTURE_FILTER="tcp"
 
 if [ $RUN_MODE -eq 0 ]; then
     #### list mode ####
     if [ $FLAG_P -eq 1 ]; then
-        TSHARK_FILTER="tcp.port == $FILTER_PORT"
+        TSHARK_FILTER="$TSHARK_FILTER and tcp.port == $FILTER_PORT"
     fi
     if [ $FLAG_A -eq 1 ]; then
         echo "$FILTER_ADDR" | "$GREP_COMMAND" : > /dev/null
