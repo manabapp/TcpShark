@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.4"                                                #
+VERSION="4.2.5"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -1204,7 +1204,7 @@ tcp_stream_flow()
                    -v custom="$FLAG_F"                 \
                    -v custom_column="$CUSTOM_COLUMN"   \
                    -v custom2="$FLAG_F2"               \
-                   -v custom_column2="$CUSTOM_COLUMN"  \
+                   -v custom_column2="$CUSTOM_COLUMN2" \
                    -v appearance="$APPEARANCE" '
     function last_value(e) {
         if (e == "")
