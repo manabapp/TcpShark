@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.3"                                                #
+VERSION="4.2.4"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -504,105 +504,67 @@ get_value()
 #==============================================================================#
 print_header_list()
 {
-    analysis_header=""
-    space_num=0
-    if [ $ANALYSIS_LEVEL -eq 0 ]; then
-        analysis_header="ret  fst  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
-        space_num=12
-    elif [ $ANALYSIS_LEVEL -eq 1 ]; then
-        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt"
-        space_num=13
-    elif [ $ANALYSIS_LEVEL -eq 2 ]; then
-        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  prt"
-        space_num=14
+    line1="======="
+    line2="       "
+    line3="Index  "
+    if [ $TIME_TYPE -eq 1 ]; then
+        line1="${line1}=========================="
+        line2="${line2}                          "
+        line3="${line3}                      TIME"
     else
-        analysis_header="ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  afo  ifo  prt"
-        space_num=16
+        line1="${line1}==============="
+        line2="${line2}               "
+        line3="${line3}           TIME"
+    fi
+    line1="${line1}===================================================="
+    line2="${line2}                                                    "
+    line3="${line3}                    Src/Dst ADDRESS                 "
+    line1="${line1}================"
+    line2="${line2}                "
+    line3="${line3}        Duration"
+    line1="${line1}============="
+    line2="${line2}             "
+    line3="${line3}  FLAGS      "
+    if [ $FLAG_Z -eq 1 ]; then
+        if [ $ANALYSIS_LEVEL -eq 0 ]; then
+            line1="${line1}========================================================================="
+            line2="${line2} | Analysis                                                             |"
+            line3="${line3} | ret  fst  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt |"
+        elif [ $ANALYSIS_LEVEL -eq 1 ]; then
+            line1="${line1}=============================================================================="
+            line2="${line2} | Analysis                                                                  |"
+            line3="${line3} | ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  prt |"
+        elif [ $ANALYSIS_LEVEL -eq 2 ]; then
+            line1="${line1}==================================================================================="
+            line2="${line2} | Analysis                                                                       |"
+            line3="${line3} | ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  prt |"
+        else
+            line1="${line1}============================================================================================="
+            line2="${line2} | Analysis                                                                                 |"
+            line3="${line3} | ret  fst  spu  dup  out  los  alo  ful  wup  zro  zrp  zpa  kep  kpa  tfo  afo  ifo  prt |"
+        fi
+    elif [ $FLAG_F -eq 1 ]; then
+        line1="${line1}======================================================================================"
+        line2="${line2} | Custom STATISTICS           <----       |       ---->                             |"
+        line3="${line3} |  COUNT        MIN        MAX        AVG |  COUNT        MIN        MAX        AVG |"
+    else
+        line1="${line1}============================"
+        line2="${line2}                            "
+        line3="${line3}  Protocol                  "
+        line1="${line1}=============================================="
+        line2="${line2} |         <----       |       ---->         |"
+        line3="${line3} | Packets       Bytes | Packets       Bytes |"
     fi
     
-    printf "====="
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "============================"
-    else
-        printf "================="
-    fi
-    printf "===================================================="
-    printf "================"
-    printf "============="
-    if [ $FLAG_Z -eq 1 ]; then
-        printf "==="
-        for key in $analysis_header ; do
-            printf "====="
-        done
-    elif [ $FLAG_F -eq 1 ]; then
-        printf "======================================================================================"
-    else
-        printf "=========================================================================="
-    fi
-    printf "\n"
+    printf "${line1}\n"
     printf "TCP Stream list\n"
     printf "Filter: ${TSHARK_FILTER}\n"
     if [ $FLAG_F -eq 1 ]; then
         printf "CField: ${CUSTOM_FIELD}\n"
     fi
-    printf "     "
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "                            "
-    else
-        printf "                 "
-    fi
-    printf "                                                    "
-    printf "                "
-    printf "             "
-    if [ $FLAG_Z -eq 1 ]; then
-        printf " | Analysis"
-        for i in `seq $space_num`; do
-            printf "     "
-        done
-        printf " |"
-    elif [ $FLAG_F -eq 1 ]; then
-        printf " | Custom STATISTICS           ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}                             |"
-    else
-        printf "                             |         ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}         |"
-    fi
-    printf "\n"
-    printf "Index"
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "                        TIME"
-    else
-        printf "             TIME"
-    fi
-    printf "                    Src/Dst ADDRESS                 "
-    printf "        Duration"
-    printf "  FLAGS      "
-    if [ $FLAG_Z -eq 1 ]; then
-        printf " | ${analysis_header} |"
-    elif [ $FLAG_F -eq 1 ]; then
-        printf " |  COUNT        MIN        MAX        AVG |  COUNT        MIN        MAX        AVG |"
-    else
-        printf "  Protocol                   | Packets       Bytes | Packets       Bytes |"
-    fi
-    printf "\n"
-    printf "====="
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "============================"
-    else
-        printf "================="
-    fi
-    printf "===================================================="
-    printf "================"
-    printf "============="
-    if [ $FLAG_Z -eq 1 ]; then
-        printf "==="
-        for key in $analysis_header ; do
-            printf "====="
-        done
-    elif [ $FLAG_F -eq 1 ]; then
-        printf "======================================================================================"
-    else
-        printf "=========================================================================="
-    fi
-    printf "\n"
+    printf "${line2}\n"
+    printf "${line3}\n"
+    printf "${line1}\n"
 }
 
 #==============================================================================#
@@ -610,33 +572,51 @@ print_header_list()
 #==============================================================================#
 print_header_flow()
 {
+    line1=""
+    line2=""
     if [ $FLAG_R -eq 1 ]; then
-        printf "=========="
+        line1="${line1}=========="
+        line2="${line2}     No.  "
     fi
     if [ $TIME_TYPE -eq 1 ]; then
-        printf "=========================="
+        line1="${line1}=========================="
+        line2="${line2}                      TIME"
     elif [ $TIME_TYPE -eq 3 ]; then
-        printf "================="
+        line1="${line1}================="
+        line2="${line2}             TIME"
     else
-        printf "==============="
+        line1="${line1}==============="
+        line2="${line2}           TIME"
     fi
-    printf "================================================================="
-    printf "======="
-    printf "==============================="
-    printf "========"
+    line1="${line1}================================================================="
+    line2="${line2}          TCP flow (WINDOW Size, Src/Dst PORT, LENGTH)           "
+    line1="${line1}======="
+    line2="${line2}FLAGS  "
+    line1="${line1}==============================="
+    line2="${line2}         SEQ/ACK Number        "
+    line1="${line1}========"
+    line2="${line2}  OPTION"
     if [ $FLAG_Z -eq 1 ]; then
-        printf "=========="
+        line1="${line1}=========="
+        line2="${line2}  Analysis"
     fi
     if [ $FLAG_O -eq 1 ]; then
-        printf "==============="
+        line1="${line1}==============="
+        line2="${line2}  Option VALUES"
     elif [ $FLAG_X -eq 1 ]; then
-        printf "=================================================================="
+        line1="${line1}=================================================================="
+        line2="${line2}  Payload DATA                                                    "
     elif [ $FLAG_F -eq 1 ]; then
-        printf "=============="
+        line1="${line1}=============="
+        line2="${line2}  Custom VALUE"
     else
-        printf "========================="
+        line1="${line1}=========="
+        line2="${line2}  Protocol"
+        line1="${line1}==============="
+        line2="${line2}    Information"
     fi
-    printf "\n"
+
+    printf "${line1}\n"
     if [ $FLAG_R -eq 1 ]; then
         printf "TCP Stream flow\n"
     else
@@ -655,7 +635,6 @@ print_header_flow()
         fi
         printf "\n"
     fi
-    
     if [ $FLAG_R -eq 1 ]; then
         #==============================================#
         # Finds the stream                             #
@@ -701,7 +680,6 @@ print_header_flow()
                 save="$srcvendor"; srcvendor="$dstvendor"; dstvendor="$save"
             fi
         fi
-        
         if [ -n "$srcaddr6" ]; then
             printf "Stream: ${ACES_BOLD}${srcaddr6}.${srcport}${ACES_END} ${ACES_GRAY}<---->${ACES_END} ${ACES_BOLD}${dstaddr6}.${dstport}${ACES_END}\n"
             if [ -n "$srcaddr" ]; then
@@ -728,62 +706,9 @@ print_header_flow()
             printf "\n"
         fi
     fi
-    
     printf "\n"
-    if [ $FLAG_R -eq 1 ]; then
-        printf "     No.  "
-    fi
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "                      TIME"
-    elif [ $TIME_TYPE -eq 3 ]; then
-        printf "             TIME"
-    else
-        printf "           TIME"
-    fi
-    printf "          TCP flow (WINDOW Size, Src/Dst PORT, LENGTH)           "
-    printf "FLAGS  "
-    printf "         SEQ/ACK Number        "
-    printf "  OPTION"
-    if [ $FLAG_Z -eq 1 ]; then
-        printf "  Analysis"
-    fi
-    if [ $FLAG_O -eq 1 ]; then
-        printf "  Option VALUES"
-    elif [ $FLAG_X -eq 1 ]; then
-        printf "  Payload DATA                                                    "
-    elif [ $FLAG_F -eq 1 ]; then
-        printf "  Custom VALUE"
-    else
-        printf "  Protocol    Information"
-    fi
-    printf "\n"
-    if [ $FLAG_R -eq 1 ]; then
-        printf "=========="
-    fi
-    if [ $TIME_TYPE -eq 1 ]; then
-        printf "=========================="
-    elif [ $TIME_TYPE -eq 3 ]; then
-        printf "================="
-    else
-        printf "==============="
-    fi
-    printf "================================================================="
-    printf "======="
-    printf "==============================="
-    printf "========"
-    if [ $FLAG_Z -eq 1 ]; then
-        printf "=========="
-    fi
-    if [ $FLAG_O -eq 1 ]; then
-        printf "==============="
-    elif [ $FLAG_X -eq 1 ]; then
-        printf "=================================================================="
-    elif [ $FLAG_F -eq 1 ]; then
-        printf "=============="
-    else
-        printf "========================="
-    fi
-    printf "\n"
+    printf "${line2}\n"
+    printf "${line1}\n"
 }
 
 #==============================================================================#
@@ -1267,7 +1192,7 @@ tcp_stream_list()
 tcp_stream_flow()
 {
     "$AWK_COMMAND" -v os_type="$OS_TYPE"               \
-	           -v infile="$FLAG_R"                 \
+                   -v infile="$FLAG_R"                 \
                    -v time_type="$TIME_TYPE"           \
                    -v invert="$FLAG_V"                 \
                    -v analysis="$FLAG_Z"               \
@@ -1364,11 +1289,11 @@ tcp_stream_flow()
             RS = "\r\n"
         FS = "\t"
         analysis_num = 0
-	num          = 0
+        num          = 0
         left_port    = 0
         left_ipaddr  = ""
         left_ipaddr6 = ""
-	first_rtime  = 0
+        first_rtime  = 0
         
         ### ANSI Color Escape Sequences ###
         if (appearance == 0) {
@@ -1536,13 +1461,13 @@ tcp_stream_flow()
         #### No. ####
         if (infile)
             printf("%8d  ", e_number)
-	if (num == 0) {
-	    left_port    = e_srcport
-	    left_ipaddr  = e_srcaddr
-	    left_ipaddr6 = e_srcaddr6
+        if (num == 0) {
+            left_port    = e_srcport
+            left_ipaddr  = e_srcaddr
+            left_ipaddr6 = e_srcaddr6
             first_rtime  = e_time
-	}
-	num++
+        }
+        num++
         
         #### TIME (0:a 1:ad 2:dd 3:e 4:r 5:rs) ####
         if (time_type == 0) {
@@ -2210,7 +2135,7 @@ while getopts "H46dvwqzoeXhVr:i:s:n:t:p:a:x:f:" flag; do
             if [ $OS_TYPE -ne 0 ]; then
                 usage
             fi
-	    ;;
+            ;;
         v) FLAG_V=1;;
         w) FLAG_W=1;;
         q) FLAG_Q=1;;
@@ -2724,7 +2649,6 @@ if [ $RUN_MODE -eq 0 ]; then
         printf "${ACES_YELLOW}WARNING${ACES_END}: No TCP packets.\n" 1>&2
         exit 1
     fi
-    
     if [ $FLAG_P -eq 1 -o $FLAG_A -eq 1 -o $FLAG_4 -eq 1 -o $FLAG_6 -eq 1 ]; then
         line=`$PRE_COMMAND "$TSHARK_COMMAND" -r "$TSHARK_INFILE" -R "$TSHARK_FILTER" -2 -c 1 $TSHARK_FIND_OPTIONS`
         if [ $? -ne 0 ]; then
@@ -2735,7 +2659,6 @@ if [ $RUN_MODE -eq 0 ]; then
             exit 1
         fi
     fi
-    
     if [ $FLAG_H -ne 1 ]; then
         print_header_list
     fi
@@ -2765,7 +2688,6 @@ elif [ $RUN_MODE -eq 2 ]; then
         printf "${ACES_RED}ERROR${ACES_END}: run as root user for live captrue.\n" 1>&2
         exit 1
     fi
-    
     if [ $FLAG_H -ne 1 ]; then
         print_header_flow
     fi
