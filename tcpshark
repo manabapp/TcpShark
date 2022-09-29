@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.5"                                                #
+VERSION="4.2.6"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -288,7 +288,7 @@ fi
     printf "\n"
     printf "      ${ACES_BOLD}OPTION${ACES_END}             TCP options.\n"
     printf "\n"
-    printf "                           ${ACES_BOLD}mwSst${ACES_END}${ACES_RED}O${ACES_END}\n"
+    printf "                           ${ACES_GREEN}m${ACES_END}${ACES_YELLOW}w${ACES_END}${ACES_CYAN}Ss${ACES_END}${ACES_BOLD}t${ACES_END}${ACES_RED}O${ACES_END}\n"
     printf "                           ${ACES_GRAY}------${ACES_END}\n"
     printf "                           ${ACES_GRAY}|||||+${ACES_END} Other option (except EOL, NOP)\n"
     printf "                           ${ACES_GRAY}||||+-${ACES_END} TCP Time Stamp Option\n"
@@ -308,10 +308,10 @@ fi
     printf "      ${ACES_BOLD}Option VALUES${ACES_END}      TCP Option's values (if some bits in OPTION area are\n"
     printf "                         set).\n"
     printf "\n"
-    printf "                           [${ACES_BOLD}m${ACES_END}] MSS=${ACES_GRAY}XXX${ACES_END}             : MSS value\n"
-    printf "                           [${ACES_BOLD}w${ACES_END}] WS=${ACES_GRAY}XXX${ACES_END}(${ACES_GRAY}YYY${ACES_END})         : Shift count, multiplier\n"
-    printf "                           [${ACES_BOLD}S${ACES_END}] SACK_PERM=1         : ---\n"
-    printf "                           [${ACES_BOLD}s${ACES_END}] SLE=${ACES_GRAY}XXX${ACES_END} SRE=${ACES_GRAY}YYY${ACES_END}     : ACK left edge, right edge\n"
+    printf "                           [${ACES_GREEN}m${ACES_END}] MSS=${ACES_GRAY}XXX${ACES_END}             : MSS value\n"
+    printf "                           [${ACES_YELLOW}w${ACES_END}] WS=${ACES_GRAY}XXX${ACES_END}(${ACES_GRAY}YYY${ACES_END})         : Shift count, multiplier\n"
+    printf "                           [${ACES_CYAN}S${ACES_END}] SACK_PERM=1         : ---\n"
+    printf "                           [${ACES_CYAN}s${ACES_END}] SLE=${ACES_GRAY}XXX${ACES_END} SRE=${ACES_GRAY}YYY${ACES_END}     : ACK left edge, right edge\n"
     printf "                           [${ACES_BOLD}t${ACES_END}] TSval=${ACES_GRAY}XXX${ACES_END} TSecr=${ACES_GRAY}YYY${ACES_END} : Timestamp value, printf reply\n"
     printf "                           [${ACES_RED}O${ACES_END}] OTHER(kind:${ACES_GRAY}XXX${ACES_END})     : TCP option's kind\n"
     printf "\n"
@@ -545,14 +545,14 @@ print_header_list()
         fi
     elif [ $FLAG_F -eq 1 ]; then
         line1="${line1}======================================================================================"
-        line2="${line2} | Custom STATISTICS           <----       |       ---->                             |"
+        line2="${line2} | Custom STATISTICS           ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}                             |"
         line3="${line3} |  COUNT        MIN        MAX        AVG |  COUNT        MIN        MAX        AVG |"
     else
         line1="${line1}============================"
         line2="${line2}                            "
         line3="${line3}  Protocol                  "
         line1="${line1}=============================================="
-        line2="${line2} |         <----       |       ---->         |"
+        line2="${line2} |         ${ACES_BLUE}<----${ACES_END}       |       ${ACES_BOLD}---->${ACES_END}         |"
         line3="${line3} | Packets       Bytes | Packets       Bytes |"
     fi
     
@@ -1340,6 +1340,15 @@ tcp_stream_flow()
         tcpflag_colors["CWR"] = ACES_MAGENTA
         tcpflag_colors["NS"]  = ACES_YELLOW
         
+        option_colors["E"] = ACES_GRAY
+        option_colors["N"] = ACES_GRAY
+        option_colors["m"] = ACES_GREEN
+        option_colors["w"] = ACES_YELLOW
+        option_colors["S"] = ACES_CYAN
+        option_colors["s"] = ACES_CYAN
+        option_colors["t"] = ACES_BOLD
+        option_colors["O"] = ACES_RED
+        
         analysis_colors["ret"] = ACES_GREEN
         analysis_colors["fst"] = ACES_CYAN
         analysis_colors["spu"] = ACES_CYAN
@@ -1543,8 +1552,7 @@ tcp_stream_flow()
         if (e_flags["urg"]   != "" && e_flags["urg"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["URG"] "U" ACES_END }
         if (e_flags["ecn"]   != "" && e_flags["ecn"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["ECN"] "E" ACES_END }
         if (e_flags["cwr"]   != "" && e_flags["cwr"]   != 0) { cnt++; flags_label = flags_label tcpflag_colors["CWR"] "C" ACES_END }
-        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) { cnt++; flags_label = flags_label tcpflag_colors["NS"]  "N" ACES_END }
-        if (cnt == 0)      flags_label = flags_label "]      "
+        if (e_flags["ns"]    != "" && e_flags["ns"]    != 0) { cnt++; flags_label = flags_label tcpflag_colors["NS"]  "N" ACES_END } if (cnt == 0)      flags_label = flags_label "]      "
         else if (cnt == 1) flags_label = flags_label "]     "
         else if (cnt == 2) flags_label = flags_label "]    "
         else if (cnt == 3) flags_label = flags_label "]   "
@@ -1576,38 +1584,41 @@ tcp_stream_flow()
         }
         
         #### OPTION ####
-        optset["eol"]      = 0
-        optset["nop"]      = 0
-        optset["mss"]      = 0
-        optset["wscale"]   = 0
-        optset["sackperm"] = 0
-        optset["sack"]     = 0
-        optset["tstamp"]   = 0
-        optset["other"]    = 0
+        optset["E"] = 0  # End of Option List (EOL)
+        optset["N"] = 0  # No-Operation (NOP)
+        optset["m"] = 0  # Maximum segment size
+        optset["w"] = 0  # Window scale
+        optset["S"] = 0  # SACK permitted
+        optset["s"] = 0  # SACK
+        optset["t"] = 0  # Timestamps
+        optset["O"] = 0  # Other
         other_kinds        = ""
         opt_num = split(e_option_kind, array3, ",")
         for (i = 1; i <= opt_num; i++) {
-            if (array3[i] == "0")      optset["eol"]      = 1
-            else if (array3[i] == "1") optset["nop"]      = 1
-            else if (array3[i] == "2") optset["mss"]      = 1
-            else if (array3[i] == "3") optset["wscale"]   = 1
-            else if (array3[i] == "4") optset["sackperm"] = 1
-            else if (array3[i] == "5") optset["sack"]     = 1
-            else if (array3[i] == "8") optset["tstamp"]   = 1
+            if (array3[i] == "0")      optset["E"] = 1
+            else if (array3[i] == "1") optset["N"] = 1
+            else if (array3[i] == "2") optset["m"] = 1
+            else if (array3[i] == "3") optset["w"] = 1
+            else if (array3[i] == "4") optset["S"] = 1
+            else if (array3[i] == "5") optset["s"] = 1
+            else if (array3[i] == "8") optset["t"] = 1
             else {
-                if (!optset["other"])
+                if (!optset["O"])
                     other_kinds = array3[i]
                 else
                     other_kinds = other_kinds "," array3[i]
-                optset["other"] = 1
+                optset["O"] = 1
             }
         }
-        if (optset["mss"])      opt_label = "m";           else opt_label = ACES_GRAY "-" ACES_END;
-        if (optset["wscale"])   opt_label = opt_label "w"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
-        if (optset["sackperm"]) opt_label = opt_label "S"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
-        if (optset["sack"])     opt_label = opt_label "s"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
-        if (optset["tstamp"])   opt_label = opt_label "t"; else opt_label = opt_label ACES_GRAY "-" ACES_END;
-        if (optset["other"])    opt_label = opt_label ACES_RED "O" ACES_END; else opt_label = opt_label ACES_GRAY "-" ACES_END;
+        opt_label = ""
+        split("m w S s t O", array, " ")
+        for (i in array) {
+            key = array[i]
+            if (optset[key])
+                opt_label = opt_label option_colors[key] key ACES_END
+            else
+                opt_label = opt_label ACES_GRAY "-" ACES_END
+        }
         printf("  %s", opt_label);
         
         #### Analysis ####
@@ -1631,15 +1642,17 @@ tcp_stream_flow()
         if (option) {
             #### Option VALUES ####
             printf("  ")
-            if (optset["mss"])      printf("MSS=%d ", e_options["mss"]);
-            if (optset["wscale"])   printf("WS=%d(%d) ", e_options["ws_shift"], e_options["ws_multi"]);
-            if (optset["sackperm"]) printf("SACK_PERM=1 ");
-            if (optset["sack"])     printf("SLE=%u SRE=%u ", e_options["sack_le"], e_options["sack_re"]);
-            if (optset["tstamp"]) {
-                if (reverse == 0)   printf("TSval=%d TSecr=%d ", e_options["ts_val"], e_options["ts_ecr"]);
-                else                printf("TSecr=%d TSval=%d ", e_options["ts_ecr"], e_options["ts_val"]);
+            if (optset["m"]) printf("MSS=%d ", e_options["mss"]);
+            if (optset["w"]) printf("WS=%d(%d) ", e_options["ws_shift"], e_options["ws_multi"]);
+            if (optset["S"]) printf("SACK_PERM=1 ");
+            if (optset["s"]) printf("SLE=%u SRE=%u ", e_options["sack_le"], e_options["sack_re"]);
+            if (optset["t"]) {
+                if (reverse == 0)
+                    printf("TSval=%d TSecr=%d ", e_options["ts_val"], e_options["ts_ecr"]);
+                else
+                    printf("TSecr=%d TSval=%d ", e_options["ts_ecr"], e_options["ts_val"]);
             }
-            if (optset["other"])    printf("OTHER(kind:%s)", other_kinds);
+            if (optset["O"]) printf("OTHER(kind:%s)", other_kinds);
         }
         else if (hexdump) {
             #### Payload DATA ####
@@ -1724,7 +1737,8 @@ tcp_stream_one()
         tcpindex_label = "    [Stream index: "
         tcpflags_label = "    Flags: "
         tcplen_label   = "    [TCP Segment Len: "
-        tcpopt_label   = "    TCP Option - "
+        options_label  = "    Options: "
+        tcpopt_label   = "        TCP Option - "
         
         tcpflag_colors["FIN"] = ACES_GREEN
         tcpflag_colors["SYN"] = ACES_CYAN
@@ -1736,13 +1750,13 @@ tcp_stream_one()
         tcpflag_colors["CWR"] = ACES_MAGENTA
         tcpflag_colors["NS"]  = ACES_YELLOW
         
-        option_labels["nop"]       = "No-Operation (NOP)"
-        option_labels["eol"]       = "End of Option List (EOL)"
-        option_labels["timestamp"] = "Timestamps"
-        option_labels["mss"]       = "Maximum segment size"
-        option_labels["wscale"]    = "Window scale"
-        option_labels["sack_perm"] = "SACK permitted"
-        option_labels["sack"]      = "SACK"
+        option_colors["End of Option List (EOL)"] = ACES_GRAY
+        option_colors["No-Operation (NOP)"]       = ACES_GRAY
+        option_colors["Maximum segment size"]     = ACES_GREEN
+        option_colors["Window scale"]             = ACES_YELLOW
+        option_colors["SACK permitted"]           = ACES_CYAN
+        option_colors["SACK"]                     = ACES_CYAN
+        option_colors["Timestamps"]               = ACES_BOLD
         
         analysis_msgs["ret"] = "This frame is a (suspected) retransmission"
         analysis_msgs["fst"] = "This frame is a (suspected) fast retransmission"
@@ -1811,21 +1825,21 @@ tcp_stream_one()
                 next
             }
         }
-        opt_num = split(e_option_kind, array3, ",")
-        for (i = 1; i <= opt_num; i++) {
-            if (array3[i] == "0")      optset["eol"]      = 1
-            else if (array3[i] == "1") optset["nop"]      = 1
-            else if (array3[i] == "2") optset["mss"]      = 1
-        }
-        if (index(line, tcpopt_label) > 0) {
-            for (key in option_labels) {
-                label = tcpopt_label option_labels[key]
-                if (index(line, label) > 0) {
-                    printf("%s\n", line)
-                    next
-                }
+        ptr = index(line, "), ")
+        if (index(line, options_label) == 1 && ptr > 0) {
+            printf("%s", substr(line, 1, ptr + 2))
+            array_num = split(substr(line, ptr + 3), array, ", ")
+            for (i = 1; i <= array_num; i++) {
+                if (i > 1)
+                    printf(", ")
+                option = array[i]
+                printf("%s%s%s", option in option_colors ? option_colors[option] : ACES_RED, option, ACES_END)
             }
-            printf("%s%s%s\n", ACES_RED, line, ACES_END)
+            printf("\n")
+            next
+        }
+        if (index(line, tcpopt_label) == 1) {
+            printf("%s\n", line)
             next
         }
         if (entire) {
