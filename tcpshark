@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.2.7"                                                #
+VERSION="4.3.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -2243,15 +2243,12 @@ fi
 # Checks Mode                                                                  #
 #==============================================================================#
 if [ $FLAG_R -eq 1 ]; then
-    if [ $FLAG_S -eq 1 ]; then
-        #### flow mode ####
-        RUN_MODE=1
-        if [ $FLAG_N -eq 1 ]; then
-            usage
-        fi
-    elif [ $FLAG_N -eq 1 ]; then
+    if [ $FLAG_N -eq 1 ]; then
         #### one mode ####
         RUN_MODE=3
+    elif [ $FLAG_S -eq 1 ]; then
+        #### flow mode ####
+        RUN_MODE=1
     else
         #### list mode ####
         RUN_MODE=0
@@ -2442,7 +2439,11 @@ elif [ $RUN_MODE -eq 2 ]; then
     fi
 else
     #### one mode ####
-    TSHARK_FILTER="frame.number == $FRAME_NUMBER"
+    if [ $FLAG_S -eq 1 ]; then
+        TSHARK_FILTER="tcp.stream == $STREAM_INDEX and frame.number == $FRAME_NUMBER"
+    else
+        TSHARK_FILTER="frame.number == $FRAME_NUMBER"
+    fi
 fi
 
 #==============================================================================#
