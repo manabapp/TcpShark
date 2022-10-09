@@ -157,7 +157,7 @@ Streams or packets are output in the following format:
                            U : Urgent
                            E : ECN-Echo
                            C : Congestion Window Reduced (CWR)
-                           N : Nonce
+                           N : Accurate ECN / Nonce
       
       Protocol           Upper layer protocol over TCP/IP.
                          If a stream contains multiple protocols, displays up to
@@ -314,8 +314,8 @@ FYR, operation has been confirmed on the following platforms:
    (e.g. `export TCPSHARK_TSHARK_COMMAND="/cygdrive/c/Program Files/Wireshark/tshark.exe"`)
 
 # VERSION
-The current stable release of TcpShark is 4.4.0 in Oct 8, 2022.  
-(md5: ba67f0db66d4a41526d28ca64c4960b8)
+The current stable release of TcpShark is 4.5.0 in Oct 9, 2022.  
+(md5: 70ec853d3ba81e2c752e5b6f200f4241)
 
 # LICENSE
 GPLv3+: GNU GPL version 3 or later <https://www.gnu.org/licenses/gpl.html>
