@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.4.0"                                                #
+VERSION="4.5.0"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -223,7 +223,7 @@ fi
     printf "                           ${ACES_MAGENTA}U${ACES_END} : Urgent\n"
     printf "                           ${ACES_YELLOW}E${ACES_END} : ECN-Echo\n"
     printf "                           ${ACES_MAGENTA}C${ACES_END} : Congestion Window Reduced (CWR)\n"
-    printf "                           ${ACES_YELLOW}N${ACES_END} : Nonce\n"
+    printf "                           ${ACES_YELLOW}N${ACES_END} : Accurate ECN / Nonce\n"
     printf "\n"
     printf "      ${ACES_BOLD}Protocol${ACES_END}           Upper layer protocol over TCP/IP.\n"
     printf "                         If a stream contains multiple protocols, displays up to\n"
@@ -956,7 +956,7 @@ tcp_stream_list()
             e_protocol = $22
         }
         
-	if (e_index == "" || e_icmptype != "" || e_icmptype6 != "")
+        if (e_index == "" || e_icmptype != "" || e_icmptype6 != "")
             next
         if (e_index >= max_streams) {
             exceeded = 1
@@ -1295,11 +1295,11 @@ tcp_stream_flow()
         FS = "\t"
         analysis_num   = 0
         num            = 0
-	first_srcport  = 0
-	first_dstport  = 0
-	first_srcaddr  = ""
-	first_dstaddr  = ""
-	first_srcaddr6 = ""
+        first_srcport  = 0
+        first_dstport  = 0
+        first_srcaddr  = ""
+        first_dstaddr  = ""
+        first_srcaddr6 = ""
         first_rtime    = 0
         
         ### ANSI Color Escape Sequences ###
@@ -1492,7 +1492,7 @@ tcp_stream_flow()
             else
                 next
         }
-	else if (e_icmptype6 != "") {
+        else if (e_icmptype6 != "") {
             icmp = 1
             if (num == 0 || e_srcport == "" || e_dstport == "" || e_srcaddr6 == "" || e_dstaddr6 == "")
                 next
@@ -1818,8 +1818,10 @@ tcp_stream_one()
         tcpflag_colors["ACK"] = ACES_GRAY
         tcpflag_colors["URG"] = ACES_MAGENTA
         tcpflag_colors["ECN"] = ACES_YELLOW
+        tcpflag_colors["ECE"] = ACES_YELLOW  # for Wireshark 4.0.0 or newer
         tcpflag_colors["CWR"] = ACES_MAGENTA
         tcpflag_colors["NS"]  = ACES_YELLOW
+        tcpflag_colors["AE"]  = ACES_YELLOW  # for Wireshark 4.0.0 or newer
         
         option_colors["End of Option List (EOL)"] = ACES_GRAY
         option_colors["No-Operation (NOP)"]       = ACES_GRAY
@@ -1888,9 +1890,9 @@ tcp_stream_one()
             }
             is_tcp  = 0
             is_data = 0
-	    if (index(line, tcp_label) == 1)
+            if (index(line, tcp_label) == 1)
                 is_tcp = 1
-	    if (index(line, data_label) == 1)
+            if (index(line, data_label) == 1)
                 is_data = 1
             printf("%s%s %s\n", ACES_BGGRAY, line, ACES_END)
             next
@@ -1901,17 +1903,17 @@ tcp_stream_one()
             if (substr(line, 1, 12) == "            ")
                 next
             if (substr(line, 1, 8) == "        ") {
-		if (len < 9 || index("[.01", substr(line, 9, 1)) > 0)
+                if (len < 9 || index("[.01", substr(line, 9, 1)) > 0)
                     next
             }
             if (substr(line, 1, 4) == "    ") {
-		if (len < 5 || substr(line, 5, 1) == "[")
+                if (len < 5 || substr(line, 5, 1) == "[")
                     next
             }
         }
         
         ### Colors some TCP headers ###
-	if (is_tcp) {
+        if (is_tcp) {
             ### Flags: ###
             ptr = index(line, "(")
             if (index(line, tcp_label_flags) == 1 && ptr > 0 && substr(line, len, 1) == ")") {
@@ -1962,7 +1964,7 @@ tcp_stream_one()
             
             ### Analysis ###
             for (key in analysis_msgs) {
-		ptr = index(line, "[" analysis_msgs[key] "]")
+                ptr = index(line, "[" analysis_msgs[key] "]")
                 if (ptr > 0) {
                    msg_len = length(analysis_msgs[key])
                    printf("%s%s%s%s%s%s%s]%s\n", ACES_GRAY, substr(line, 1, ptr), ACES_END, analysis_colors[key], substr(line, ptr + 1, msg_len), ACES_END, ACES_GRAY, ACES_END)
@@ -2439,7 +2441,8 @@ fi
 #   1.8.0  - 1.11.* : ANALYSIS_LEVEL => 0                                      #
 #   1.12.0 - 1.*.*  : ANALYSIS_LEVEL => 1                                      #
 #   2.0.0  - 3.3.*  : ANALYSIS_LEVEL => 2                                      #
-#   3.4.0  - *.*.*  : ANALYSIS_LEVEL => 3                                      #
+#   3.4.0  - 3.*.*  : ANALYSIS_LEVEL => 3                                      #
+#   4.0.0  - *.*.*  : ANALYSIS_LEVEL => 4                                      #
 #==============================================================================#
 version=`get_version`
 case "$version" in
@@ -2450,7 +2453,7 @@ case "$version" in
     2.*)            ANALYSIS_LEVEL=2;;
     3.[0-3].*)      ANALYSIS_LEVEL=2;;
     3.*)            ANALYSIS_LEVEL=3;;
-    [4-9].*)        ANALYSIS_LEVEL=3;;
+    [4-9].*)        ANALYSIS_LEVEL=4;;
     *)              printf "${ACES_RED}ERROR${ACES_END}: Wireshark version too old (${version}).\n" 1>&2; exit 1;;
 esac
 
@@ -2506,150 +2509,143 @@ fi
 #==============================================================================#
 # Builds tshark fields list                                                    #
 #==============================================================================#
-if [ $RUN_MODE -eq 0 ]; then
-    #### list mode ####
-    TSHARK_FIELDS="-e tcp.stream \
-    -e frame.time \
-    -e frame.time_relative \
-    -e tcp.srcport \
-    -e tcp.dstport \
-    -e icmp.type \
-    -e icmpv6.type \
-    -e ip.src \
-    -e ip.dst \
-    -e ipv6.src \
-    -e ipv6.dst \
-    -e tcp.flags.fin \
-    -e tcp.flags.syn \
-    -e tcp.flags.reset \
-    -e tcp.flags.push \
-    -e tcp.flags.ack \
-    -e tcp.flags.urg \
-    -e tcp.flags.ecn \
-    -e tcp.flags.cwr \
-    -e tcp.flags.ns \
-    -e tcp.len"
-elif [ $RUN_MODE -eq 1 -o $RUN_MODE -eq 2 ]; then
-    #### flow mode ####
-    if [ $TIME_TYPE -eq 0 -o $TIME_TYPE -eq 1 ]; then
-        time_field="frame.time"
-    elif [ $TIME_TYPE -eq 2 ]; then
-        time_field="frame.time_delta_displayed"
-    elif [ $TIME_TYPE -eq 3 ]; then
-        time_field="frame.time_epoch"
+if [ $RUN_MODE -ne 3 ]; then
+    if [ $RUN_MODE -eq 0 ]; then
+        #### list mode ####
+        TSHARK_FIELDS="-e tcp.stream"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time_relative"
     else
-        time_field="frame.time_relative"
+        #### flow mode ####
+        TSHARK_FIELDS="-e frame.number"
+        if [ $TIME_TYPE -eq 0 -o $TIME_TYPE -eq 1 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time"
+        elif [ $TIME_TYPE -eq 2 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time_delta_displayed"
+        elif [ $TIME_TYPE -eq 3 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time_epoch"
+        else
+            TSHARK_FIELDS="$TSHARK_FIELDS -e frame.time_relative"
+        fi
     fi
-    if [ $FLAG_W -eq 1 ]; then
-        window_field="tcp.window_size"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.srcport"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.dstport"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e icmp.type"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e icmpv6.type"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e ip.src"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e ip.dst"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e ipv6.src"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e ipv6.dst"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.fin"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.syn"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.reset"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.push"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.ack"
+    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.urg"
+    if [ $ANALYSIS_LEVEL -ge 4 ]; then
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.ece"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.cwr"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.ae"
     else
-        window_field="tcp.window_size_value"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.ecn"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.cwr"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.flags.ns"
     fi
-    TSHARK_FIELDS="-e frame.number \
-    -e $time_field \
-    -e tcp.srcport \
-    -e tcp.dstport \
-    -e icmp.type \
-    -e icmpv6.type \
-    -e ip.src \
-    -e ip.dst \
-    -e ipv6.src \
-    -e ipv6.dst \
-    -e tcp.flags.fin \
-    -e tcp.flags.syn \
-    -e tcp.flags.reset \
-    -e tcp.flags.push \
-    -e tcp.flags.ack \
-    -e tcp.flags.urg \
-    -e tcp.flags.ecn \
-    -e tcp.flags.cwr \
-    -e tcp.flags.ns \
-    -e tcp.seq \
-    -e tcp.ack \
-    -e $window_field \
-    -e tcp.len \
-    -e tcp.option_kind"
-fi
-
-if [ $FLAG_Z -eq 1 ]; then
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.retransmission"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.fast_retransmission"
-    if [ $ANALYSIS_LEVEL -ge 1 ]; then
-        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.spurious_retransmission"
+    if [ $RUN_MODE -eq 0 ]; then
+        #### list mode ####
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.len"
+    else
+        #### flow mode ####
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.seq"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.ack"
+        if [ $FLAG_W -eq 1 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.window_size"
+        else
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.window_size_value"
+        fi
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.len"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.option_kind"
     fi
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.duplicate_ack"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.out_of_order"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.lost_segment"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.ack_lost_segment"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.window_full"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.window_update"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window_probe"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window_probe_ack"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.keep_alive"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.keep_alive_ack"
-    if [ $ANALYSIS_LEVEL -ge 2 ]; then
-        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_syn"
+    if [ $FLAG_Z -eq 1 ]; then
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.retransmission"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.fast_retransmission"
+        if [ $ANALYSIS_LEVEL -ge 1 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.spurious_retransmission"
+        fi
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.duplicate_ack"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.out_of_order"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.lost_segment"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.ack_lost_segment"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.window_full"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.window_update"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window_probe"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.zero_window_probe_ack"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.keep_alive"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.keep_alive_ack"
+        if [ $ANALYSIS_LEVEL -ge 2 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_syn"
+        fi
+        if [ $ANALYSIS_LEVEL -ge 3 ]; then
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_ack"
+            TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_ignored"
+        fi
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.reused_ports"
     fi
-    if [ $ANALYSIS_LEVEL -ge 3 ]; then
-        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_ack"
-        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.tfo_ignored"
-    fi
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.analysis.reused_ports"
-fi
-if [ $FLAG_O -eq 1 ]; then
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.mss_val"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.wscale.shift"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.wscale.multiplier"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack.count"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack_le"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack_re"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.timestamp.tsval"
-    TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.timestamp.tsecr"
-elif [ $FLAG_X -eq 1 ]; then
+    if [ $FLAG_O -eq 1 ]; then
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.mss_val"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.wscale.shift"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.wscale.multiplier"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack.count"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack_le"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.sack_re"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.timestamp.tsval"
+        TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.options.timestamp.tsecr"
+    elif [ $FLAG_X -eq 1 ]; then
         TSHARK_FIELDS="$TSHARK_FIELDS -e tcp.payload"
-elif [ $FLAG_F -eq 1 ]; then
-    duplicated=0
-    for field in $TSHARK_FIELDS ; do
-        if [ $field = "-e" ]; then
-            continue
-        fi
-        CUSTOM_COLUMN=`expr $CUSTOM_COLUMN + 1`
-        if [ $field = "$CUSTOM_FIELD" ]; then
-            duplicated=1
-            break
-        fi
-    done
-    if [ $duplicated -eq 0 ]; then
-        CUSTOM_COLUMN=0
-        TSHARK_FIELDS="$TSHARK_FIELDS -e $CUSTOM_FIELD"
-    fi
-    
-    if [ $FLAG_F2 -eq 1 ]; then
+    elif [ $FLAG_F -eq 1 ]; then
         duplicated=0
         for field in $TSHARK_FIELDS ; do
             if [ $field = "-e" ]; then
                 continue
             fi
-            CUSTOM_COLUMN2=`expr $CUSTOM_COLUMN2 + 1`
-            if [ $field = "$CUSTOM_FIELD2" ]; then
+            CUSTOM_COLUMN=`expr $CUSTOM_COLUMN + 1`
+            if [ $field = "$CUSTOM_FIELD" ]; then
                 duplicated=1
                 break
             fi
         done
         if [ $duplicated -eq 0 ]; then
-            CUSTOM_COLUMN2=0
-            TSHARK_FIELDS="$TSHARK_FIELDS -e $CUSTOM_FIELD2"
+            CUSTOM_COLUMN=0
+            TSHARK_FIELDS="$TSHARK_FIELDS -e $CUSTOM_FIELD"
         fi
-    fi
-elif [ $RUN_MODE -le 2 ]; then
-    if [ $RUN_MODE -ge 1 -o $FLAG_Z -eq 0 ]; then
-        if [ $ANALYSIS_LEVEL -le 1 ]; then
-            TSHARK_FIELDS="$TSHARK_FIELDS -e col.Protocol"
-            TSHARK_FIELDS="$TSHARK_FIELDS -e col.Info"
-        else
-            TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Protocol"
-            TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Info"
+        
+        if [ $FLAG_F2 -eq 1 ]; then
+            duplicated=0
+            for field in $TSHARK_FIELDS ; do
+                if [ $field = "-e" ]; then
+                    continue
+                fi
+                CUSTOM_COLUMN2=`expr $CUSTOM_COLUMN2 + 1`
+                if [ $field = "$CUSTOM_FIELD2" ]; then
+                    duplicated=1
+                    break
+                fi
+            done
+            if [ $duplicated -eq 0 ]; then
+                CUSTOM_COLUMN2=0
+                TSHARK_FIELDS="$TSHARK_FIELDS -e $CUSTOM_FIELD2"
+            fi
+        fi
+    elif [ $RUN_MODE -le 2 ]; then
+        if [ $RUN_MODE -ge 1 -o $FLAG_Z -eq 0 ]; then
+            if [ $ANALYSIS_LEVEL -le 1 ]; then
+                TSHARK_FIELDS="$TSHARK_FIELDS -e col.Protocol"
+                TSHARK_FIELDS="$TSHARK_FIELDS -e col.Info"
+            else
+                TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Protocol"
+                TSHARK_FIELDS="$TSHARK_FIELDS -e _ws.col.Info"
+            fi
         fi
     fi
 fi
