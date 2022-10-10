@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.5.2"                                                #
+VERSION="4.5.3"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -1677,9 +1677,16 @@ tcp_stream_flow()
         }
         else if (custom) {
             #### Custom VALUE ####
-            printf("  %s", e_custom_val)
-            if (custom2 && e_custom_val2 != "")
-                printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
+            if (reverse) {
+                printf("  %s%s%s", ACES_BLUE, e_custom_val, ACES_END)
+                if (custom2 && e_custom_val2 != "")
+                    printf(" %s(%s%s%s%s%s)%s", ACES_GRAY, ACES_END, ACES_BLUE, e_custom_val2, ACES_END, ACES_GRAY, ACES_END)
+            }
+            else {
+                printf("  %s", e_custom_val)
+                if (custom2 && e_custom_val2 != "")
+                    printf(" %s(%s%s%s)%s", ACES_GRAY, ACES_END, e_custom_val2, ACES_GRAY, ACES_END)
+            }
         }
         else {
             #### Protocol Information ####
