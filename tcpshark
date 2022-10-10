@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.5.3"                                                #
+VERSION="4.5.4"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -1658,17 +1658,17 @@ tcp_stream_flow()
         if (option) {
             #### Option VALUES ####
             printf("  ")
-            if (optset["m"]) printf("MSS=%d ", e_options["mss"])
-            if (optset["w"]) printf("WS=%d(%d) ", e_options["ws_shift"], e_options["ws_multi"])
-            if (optset["S"]) printf("SACK_PERM=1 ")
-            if (optset["s"]) printf("SLE=%u SRE=%u ", e_options["sack_le"], e_options["sack_re"])
-            if (optset["t"]) {
+            if (optset["mss"])      printf("MSS=%d ", e_options["mss"])
+            if (optset["wscale"])   printf("WS=%d(%d) ", e_options["ws_shift"], e_options["ws_multi"])
+            if (optset["sackperm"]) printf("SACK_PERM=1 ")
+            if (optset["sack"])     printf("SLE=%u SRE=%u ", e_options["sack_le"], e_options["sack_re"])
+            if (optset["tstamp"]) {
                 if (reverse == 0)
                     printf("TSval=%d TSecr=%d ", e_options["ts_val"], e_options["ts_ecr"])
                 else
                     printf("TSecr=%d TSval=%d ", e_options["ts_ecr"], e_options["ts_val"])
             }
-            if (optset["O"]) printf("OTHER(kind:%s)", other_kinds)
+            if (optset["other"]) printf("OTHER(kind:%s)", other_kinds)
         }
         else if (hexdump) {
             #### Payload DATA ####
@@ -2112,7 +2112,7 @@ TSHARK_FIND_OPTIONS=""
 TSHARK_MAIN_OPTIONS=""
 CUSTOM_FIELD=""
 CUSTOM_FIELD2=""
-CUSTOM_FTYPE=0            # 0:ohter, 1:integer, 2:float
+CUSTOM_FTYPE=0            # 0:other, 1:integer, 2:float
 CUSTOM_COLUMN=0
 CUSTOM_COLUMN2=0
 TIME_TYPE=0               # 0:a, 1:ad, 2:dd, 3:e, 4:r, 5:rs
