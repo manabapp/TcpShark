@@ -3,7 +3,7 @@
 #                                                              #
 NAME="TcpShark"                                                #
 DESCRIPTION="Packet analyzer for TCP troubleshooting"          #
-VERSION="4.5.1"                                                #
+VERSION="4.5.2"                                                #
 AUTHOR="Hirose, Manabu <manabapp@gmail.com>"                   #
 #                                                              #
 #                            Copyright (C) 2014-2022 manabapp. #
@@ -421,6 +421,15 @@ check_field()
 }
 
 #==============================================================================#
+# Function: Returns field type                                                 #
+#==============================================================================#
+get_ftype()
+{
+    ftype=`$PRE_COMMAND "$TSHARK_COMMAND" -G fields | cut -f 3,4 | "$GREP_COMMAND" "^$1[[:space:]]" | cut -f 2`
+    printf "$ftype"
+}
+
+#==============================================================================#
 # Function: Returns wireshark version                                          #
 #==============================================================================#
 get_version()
@@ -442,61 +451,6 @@ get_version()
         return
     fi
     printf "unknown"
-}
-
-#==============================================================================#
-# Function: Returns field type (0:ohter, 1:integer, 2:float)                   #
-#==============================================================================#
-get_ftype()
-{
-    $PRE_COMMAND "$TSHARK_COMMAND" -G fields | "$AWK_COMMAND" -F "\t" -v field="$1" '
-    BEGIN {
-        type = 0
-    };
-    /^F/ {
-        if ($3 == field) {
-            if ($4 == "FT_BOOLEAN")            type = 1
-            else if ($4 == "FT_INT8")          type = 1
-            else if ($4 == "FT_INT16")         type = 1
-            else if ($4 == "FT_INT24")         type = 1
-            else if ($4 == "FT_INT32")         type = 1
-            else if ($4 == "FT_INT64")         type = 1
-            else if ($4 == "FT_UINT8")         type = 1
-            else if ($4 == "FT_UINT16")        type = 1
-            else if ($4 == "FT_UINT24")        type = 1
-            else if ($4 == "FT_UINT32")        type = 1
-            else if ($4 == "FT_UINT64")        type = 1
-            else if ($4 == "FT_FLOAT")         type = 2
-            else if ($4 == "FT_DOUBLE")        type = 2
-            else if ($4 == "FT_RELATIVE_TIME") type = 2
-            else                               type = 0
-            exit
-        }
-    };
-    END {
-        printf(type)
-    } '
-}
-
-#==============================================================================#
-# Function: Returns and one of comma separated values                          #
-#==============================================================================#
-get_value()
-{
-    echo "$1" | "$AWK_COMMAND" -F "\t" -v column="$2" '
-    {
-        if ($column == "") {
-            value = ""
-        }
-        else {
-            num = split($column, array, ",")
-            if (num == 0)
-                value = ""
-            else
-                value = array[num]
-        }
-        printf(value)
-    } '
 }
 
 #==============================================================================#
@@ -660,10 +614,10 @@ print_header_flow()
         fi
         srcport=`echo "$line" | cut -f 1`
         dstport=`echo "$line" | cut -f 2`
-        srcaddr=`get_value "$line" 3`
-        dstaddr=`get_value "$line" 4`
-        srcaddr6=`get_value "$line" 5`
-        dstaddr6=`get_value "$line" 6`
+        srcaddr=`echo "$line" | cut -f 3 | rev | cut -d , -f 1 | rev`
+        dstaddr=`echo "$line" | cut -f 4 | rev | cut -d , -f 1 | rev`
+        srcaddr6=`echo "$line" | cut -f 5 | rev | cut -d , -f 1 | rev`
+        dstaddr6=`echo "$line" | cut -f 6 | rev | cut -d , -f 1 | rev`
         srcmac=`echo "$line" | cut -f 7`
         dstmac=`echo "$line" | cut -f 8`
         vlanid=`echo "$line" | cut -f 9`
@@ -2407,7 +2361,7 @@ if [ $OS_TYPE -eq 0 -o $OS_TYPE -eq 1 ]; then
     if [ -n "$TCPSHARK_EXECUTION_USER" ]; then
         if [ `whoami` = 'root' ]; then
             PRE_COMMAND="sudo -u $TCPSHARK_EXECUTION_USER"
-            $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null
+            $PRE_COMMAND "$TSHARK_COMMAND" -v > /dev/null 2>&1
             if [ $? -ne 0 ]; then
                 exit 1
             fi
@@ -2493,7 +2447,16 @@ if [ $FLAG_F -eq 1 ]; then
         exit 1
     fi
     if [ $RUN_MODE -eq 0 ]; then
-        CUSTOM_FTYPE=`get_ftype $CUSTOM_FIELD`
+        ftype=`get_ftype $CUSTOM_FIELD`
+        case "$ftype" in
+            FT_BOOLEAN)       CUSTOM_FTYPE=1;;
+            FT_INT*)          CUSTOM_FTYPE=1;;
+            FT_UINT*)         CUSTOM_FTYPE=1;;
+            FT_FLOAT)         CUSTOM_FTYPE=2;;
+            FT_DOUBLE)        CUSTOM_FTYPE=2;;
+            FT_RELATIVE_TIME) CUSTOM_FTYPE=2;;
+            *)                CUSTOM_FTYPE=0;;
+        esac
     fi
 fi
 if [ $FLAG_F2 -eq 1 ]; then
@@ -2651,38 +2614,54 @@ fi
 #==============================================================================#
 # Builds tshark option parameter                                               #
 #==============================================================================#
-TSHARK_FIND_OPTIONS="-o nameres.mac_name:FALSE              \
-                     -o nameres.transport_name:FALSE        \
-                     -o nameres.network_name:FALSE          \
-                     -o frame.generate_epoch_time:FALSE     \
-                     -o tcp.check_checksum:FALSE            \
-                     -o tcp.desegment_tcp_streams:TRUE      \
-                     -o tcp.analyze_sequence_numbers:FALSE  \
-                     -o tcp.relative_sequence_numbers:FALSE \
-                     -o tcp.track_bytes_in_flight:FALSE     \
-                     -o tcp.calculate_timestamps:FALSE"
-TSHARK_MAIN_OPTIONS="-o nameres.network_name:FALSE          \
-                     -o tcp.desegment_tcp_streams:TRUE"
+has_tcp_analysis_field=0
+if [ $FLAG_F -eq 1 ]; then
+    echo "$CUSTOM_FIELD" | "$GREP_COMMAND" "tcp.analysis." > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        has_tcp_analysis_field=1
+    fi
+fi
+if [ $has_tcp_analysis_field -ne 1 -a $FLAG_F2 -eq 1 ]; then
+    echo "$CUSTOM_FIELD2" | "$GREP_COMMAND" "tcp.analysis." > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        has_tcp_analysis_field=1
+    fi
+fi
 
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o nameres.network_name:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.desegment_tcp_streams:TRUE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o nameres.mac_name:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o nameres.transport_name:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.check_checksum:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.calculate_timestamps:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o frame.generate_epoch_time:FALSE"
 if [ $ANALYSIS_LEVEL -ge 2 ]; then
     TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o ip.use_geoip:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.use_geoip:FALSE"
+fi
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.analyze_sequence_numbers:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.relative_sequence_numbers:FALSE"
+TSHARK_FIND_OPTIONS="$TSHARK_FIND_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
+
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.network_name:FALSE"
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.desegment_tcp_streams:TRUE"
+if [ $RUN_MODE -eq 3 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:TRUE"
+else
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE"
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:FALSE"
 fi
 if [ $TIME_TYPE -eq 3 -o $RUN_MODE -eq 3 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:TRUE"
 else
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o frame.generate_epoch_time:FALSE"
 fi
-has_tcp_analysis_field=0
-if [ $FLAG_F -eq 1 ]; then
-    case $CUSTOM_FIELD in
-        tcp.analysis.*) has_tcp_analysis_field=1;;
-    esac
-fi
-if [ $has_tcp_analysis_field -ne 1 -a $FLAG_F2 -eq 1 ]; then
-    case $CUSTOM_FIELD2 in
-        tcp.analysis.*) has_tcp_analysis_field=1;;
-    esac
+if [ $ANALYSIS_LEVEL -ge 2 ]; then
+    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.use_geoip:FALSE"
 fi
 if [ $has_tcp_analysis_field -eq 1 -o $FLAG_Q -eq 1 -o $FLAG_Z -eq 1 -o $RUN_MODE -eq 3 ]; then
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.analyze_sequence_numbers:TRUE"
@@ -2699,22 +2678,11 @@ if [ "$CUSTOM_FIELD" = "tcp.analysis.bytes_in_flight" -o "$CUSTOM_FIELD2" = "tcp
 else
     TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.track_bytes_in_flight:FALSE"
 fi
-if [ $RUN_MODE -eq 3 ]; then
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:TRUE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.summary_in_tree:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ipv6.summary_in_tree:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.summary_in_tree:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o udp.summary_in_tree:FALSE"
-else
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.mac_name:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o nameres.transport_name:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.check_checksum:FALSE"
-    TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.calculate_timestamps:FALSE"
-fi
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o vlan.summary_in_tree:FALSE"
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ip.summary_in_tree:FALSE"
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o ipv6.summary_in_tree:FALSE"
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o tcp.summary_in_tree:FALSE"
+TSHARK_MAIN_OPTIONS="$TSHARK_MAIN_OPTIONS -o udp.summary_in_tree:FALSE"
 
 #==============================================================================#
 # Analyzes packet capture                                                      #
@@ -2735,7 +2703,7 @@ if [ $RUN_MODE -eq 0 ]; then
         TSHARK_FILTER="tcp.port == $FILTER_PORT"
     fi
     if [ $FLAG_A -eq 1 ]; then
-        echo "$FILTER_ADDR" | "$GREP_COMMAND" : > /dev/null
+        echo "$FILTER_ADDR" | "$GREP_COMMAND" : > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             TSHARK_FILTER="$TSHARK_FILTER and ipv6.addr == $FILTER_ADDR"
         else
